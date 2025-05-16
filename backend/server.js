@@ -32,3 +32,28 @@ connection.connect(err => {
   console.log('Conectado ao banco de dados MySQL');
 });
 
+// Rota de login
+app.post('/login', (req, res) => {
+  const { email, senha } = req.body;
+
+  if (!email || !senha) {
+    return res.status(400).json({ error: 'Email e senha são obrigatórios' });
+  }
+
+  const query = 'SELECT * FROM funcionarios WHERE email = ? AND senha = ?';
+
+  connection.query(query, [email, senha], (err, results) => {
+    if (err) {
+      console.error('Erro ao consultar o banco:', err);
+      return res.status(500).json({ error: 'Erro interno no servidor' });
+    }
+
+    if (results.length > 0) {
+      // Usuário encontrado
+      res.status(200).json({ success: true, user: results[0] });
+    } else {
+      // Usuário não encontrado
+      res.status(401).json({ success: false, message: 'Email ou senha inválidos' });
+    }
+  });
+});
