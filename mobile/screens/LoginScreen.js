@@ -1,60 +1,74 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, SafeAreaView, StatusBar } from 'react-native';
+import axios from 'axios';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [senha, setSenha] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const API_URL = 'http://10.136.23.237:3000/api';
 
   const handleLogin = async () => {
+    if (!email || !senha) {
+      setError('Preencha todos os campos.');
+      return;
+    }
+
     try {
-      const response = await fetch('http://10.136.23.237:3000/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, senha: password }),
-      });
+      setLoading(true);
+      const response = await axios.post(`${API_URL}/login`, { email, senha });
 
-      const data = await response.json();
-
-      if (data.success) {
-        navigation.replace('Loading');
+      if (response.data.success) {
+        setError(null);
+        navigation.replace('Home'); // ou 'Loading' se for o nome da próxima tela
       } else {
-        alert('Email ou senha inválidos');
+        setError('Email ou senha inválidos.');
       }
-    } catch (error) {
-      console.error('Erro ao fazer login:', error);
-      alert('Erro ao conectar com o servidor.');
+    } catch (err) {
+      console.error('Erro ao fazer login:', err.message);
+      setError('Não foi possível conectar ao servidor.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Olá,{"\n"}Bem Vindo(a){"\n"}de Volta</Text>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#000" />
+      <View style={styles.innerContainer}>
+        <Text style={styles.title}>Bem-vindo(a) de volta!</Text>
 
-      <View style={styles.form}>
         <TextInput
           placeholder="Email"
-          placeholderTextColor="#888"
+          placeholderTextColor="#aaa"
           style={styles.input}
           value={email}
           onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
         />
         <TextInput
           placeholder="Senha"
-          placeholderTextColor="#888"
-          secureTextEntry
+          placeholderTextColor="#aaa"
           style={styles.input}
-          value={password}
-          onChangeText={setPassword}
+          value={senha}
+          onChangeText={setSenha}
+          secureTextEntry
         />
-        <TouchableOpacity style={styles.button} onPress={handleLogin}>
-          <Text style={styles.buttonText}>Login</Text>
+
+        {error && <Text style={styles.errorText}>{error}</Text>}
+
+        <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
+          {loading ? (
+            <ActivityIndicator color="#000" />
+          ) : (
+            <Text style={styles.buttonText}>Entrar</Text>
+          )}
         </TouchableOpacity>
       </View>
-
-      <Image source={require('../assets/Group 6.png')} style={styles.nome} />
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -62,43 +76,43 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
+  },
+  innerContainer: {
+    flex: 1,
+    justifyContent: 'center',
     padding: 24,
-    justifyContent: 'space-around'
   },
   title: {
-    color: '#FFF',
-    fontSize: 37,
-    lineHeight: 40,
-    marginTop: 60,
-    fontWeight: 'bold'
+    color: '#fff',
+    fontSize: 32,
+    fontWeight: 'bold',
+    marginBottom: 40,
   },
   input: {
     backgroundColor: '#1E1D25',
-    color: '#FFF',
-    borderRadius: 35,
-    height: 70,
+    color: '#fff',
+    borderRadius: 30,
+    height: 60,
     paddingHorizontal: 20,
-    marginBottom: 16,
-    fontSize: 16
+    marginBottom: 20,
+    fontSize: 16,
   },
   button: {
-    backgroundColor: '#FFF',
-    height: 70,
-    borderRadius: 35,
+    backgroundColor: '#fff',
+    height: 60,
+    borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 50
+    marginTop: 20,
   },
   buttonText: {
     color: '#000',
-    fontSize: 20,
-    fontWeight: 'bold'
+    fontSize: 18,
+    fontWeight: 'bold',
   },
-  nome: {
-    marginLeft: 10
+  errorText: {
+    color: '#e74c3c',
+    textAlign: 'center',
+    marginTop: 10,
   },
-  form: {
-    height: 200,
-    marginBottom: 80
-  }
 });
