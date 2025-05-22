@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-<<<<<<< HEAD
+
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, SafeAreaView, StatusBar } from 'react-native';
 import axios from 'axios';
 
@@ -75,7 +75,7 @@ export default function LoginScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-<<<<<<< HEAD
+
   container: {
     flex: 1,
     backgroundColor: '#000',
