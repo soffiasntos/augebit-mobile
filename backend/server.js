@@ -99,7 +99,7 @@ app.get('/test-db', (req, res) => {
 
 // Rota para listar todos os funcionários (para debug)
 app.get('/funcionarios', (req, res) => {
-  const query = 'SELECT id, nome, email FROM funcionarios';
+  const query = 'SELECT id, nome, email, NomeCompleto FROM funcionarios';
   
   req.dbConnection.query(query, (err, results) => {
     if (err) {
@@ -131,7 +131,8 @@ app.post('/login', (req, res) => {
     });
   }
   
-  const query = 'SELECT * FROM funcionarios WHERE email = ? AND senha = ?';
+  // Incluir NomeCompleto na consulta
+  const query = 'SELECT id, nome, email, NomeCompleto FROM funcionarios WHERE email = ? AND senha = ?';
   
   req.dbConnection.query(query, [email, senha], (err, results) => {
     if (err) {
@@ -147,7 +148,6 @@ app.post('/login', (req, res) => {
     
     if (results.length > 0) {
       const user = { ...results[0] };
-      delete user.senha;
       
       console.log('Login bem-sucedido para:', email);
       res.json({
@@ -179,7 +179,7 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log('TESTES DISPONÍVEIS:');
   console.log(`• API Status: http://10.136.23.237:${PORT}/`);
   console.log(`• Teste DB: http://10.136.23.237:${PORT}/test-db`);
-  console.log(`• Funcionários: http://10.136.23.237:${PORT}/funcionarios`);
+  console.log(`• Funcionários: http://10.136.23.237:${PORT}/funcionários`);
 });
 
 process.on('uncaughtException', (error) => {

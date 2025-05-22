@@ -4,7 +4,6 @@
     "slug": "mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-   
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
@@ -16,7 +15,6 @@
     },
     "android": {
       "adaptiveIcon": {
-        
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true
@@ -25,7 +23,8 @@
       "favicon": "./assets/augebit.png"
     },
     "plugins": [
-      "expo-video"
+      "expo-video",
+      "expo-font"
     ]
   }
 }
