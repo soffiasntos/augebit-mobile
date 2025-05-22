@@ -1,169 +1,196 @@
 const express = require('express');
 const mysql = require('mysql');
 const cors = require('cors');
-<<<<<<< HEAD
-=======
 
 // Configuração do banco de dados
-const dbConfig = {
-  host: 'localhost',  // Endereço do servidor MySQL
-  user: 'root',       // Usuário padrão do XAMPP
-  password: '',       // Senha padrão do XAMPP (vazia)
-  database: 'estoque' // Nome do banco de dados
-};
->>>>>>> dd65a1025b52df6e111bdb49343ae933a116cc22
-
-const app = express();
-const PORT = 3000;
-
-<<<<<<< HEAD
 const dbConfig = {
   host: 'localhost',
   user: 'root',
   password: '',
-  database: 'estoque'
+  database: 'estoque',
+  acquireTimeout: 60000,
+  timeout: 60000,
+  reconnect: true
 };
 
-const connection = mysql.createConnection(dbConfig);
+const app = express();
+const PORT = 3000;
 
-connection.connect(err => {
-  if (err) {
-    console.error('Erro ao conectar ao banco de dados:', err);
-    return;
-  }
-  console.log('Conectado ao banco de dados MySQL');
-=======
 // Middleware
 app.use(cors({
-  origin: '*', // Permite requisições de qualquer origem
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
 app.use(express.json());
 
-// Criar pool de conexões para melhor performance e estabilidade
-const pool = mysql.createPool(dbConfig);
+// Pool de conexões
+const pool = mysql.createPool({
+  ...dbConfig,
+  connectionLimit: 10,
+  acquireTimeout: 60000,
+  timeout: 60000,
+  reconnect: true
+});
 
-// Middleware para verificar conexão com o banco
+// Teste de conexão na inicialização
+pool.getConnection((err, connection) => {
+  if (err) {
+    console.error('ERRO: Não foi possível conectar ao banco de dados!');
+    console.error('Detalhes:', err.message);
+    console.log('VERIFICAÇÕES NECESSÁRIAS:');
+    console.log('1. XAMPP está rodando?');
+    console.log('2. MySQL está ativo no XAMPP?');
+    console.log('3. Banco "estoque" existe?');
+    console.log('4. Tabela "funcionarios" existe?');
+  } else {
+    console.log('Conexão com banco de dados estabelecida!');
+    connection.release();
+  }
+});
+
+// Middleware de conexão
 app.use((req, res, next) => {
   pool.getConnection((err, connection) => {
     if (err) {
-      console.error('Erro ao obter conexão do pool:', err);
-      return res.status(500).json({ 
+      console.error('Erro ao obter conexão:', err);
+      return res.status(500).json({
+        success: false,
         error: 'Erro de conexão com o banco de dados',
         details: err.message
       });
     }
     
-    // Tornar a conexão disponível para as rotas
     req.dbConnection = connection;
-    
-    // Middleware para liberar a conexão quando a resposta for enviada
-    res.on('finish', () => {
-      connection.release();
-    });
-    
+    res.on('finish', () => connection.release());
     next();
   });
 });
 
-// Rota de teste para verificar se o servidor está funcionando
+// Rota de teste
 app.get('/', (req, res) => {
-  res.json({ message: 'API funcionando corretamente!' });
->>>>>>> dd65a1025b52df6e111bdb49343ae933a116cc22
+  res.json({ 
+    message: 'API funcionando corretamente!',
+    timestamp: new Date().toISOString()
+  });
 });
 
-app.use(cors());
-app.use(express.json());
-
-
-app.get('/', (req, res) => {
-  res.send('API funcionando');
+// Rota de teste do banco
+app.get('/test-db', (req, res) => {
+  const query = 'SELECT COUNT(*) as total FROM funcionarios';
+  
+  req.dbConnection.query(query, (err, results) => {
+    if (err) {
+      return res.status(500).json({
+        success: false,
+        error: 'Erro ao consultar banco',
+        details: err.message
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Conexão com banco OK!',
+      totalFuncionarios: results[0].total
+    });
+  });
 });
 
+// Rota para listar todos os funcionários (para debug)
+app.get('/funcionarios', (req, res) => {
+  const query = 'SELECT id, nome, email FROM funcionarios';
+  
+  req.dbConnection.query(query, (err, results) => {
+    if (err) {
+      return res.status(500).json({
+        success: false,
+        error: 'Erro ao consultar funcionários',
+        details: err.message
+      });
+    }
+    
+    res.json({
+      success: true,
+      funcionarios: results
+    });
+  });
+});
 
+// Rota de login
 app.post('/login', (req, res) => {
+  console.log('Tentativa de login recebida:', { email: req.body.email });
+  
   const { email, senha } = req.body;
   
-  // Validação de dados
   if (!email || !senha) {
-    return res.status(400).json({ 
-      success: false, 
-      message: 'Email e senha são obrigatórios' 
+    console.log('Dados incompletos');
+    return res.status(400).json({
+      success: false,
+      message: 'Email e senha são obrigatórios'
     });
   }
   
   const query = 'SELECT * FROM funcionarios WHERE email = ? AND senha = ?';
-<<<<<<< HEAD
-  connection.query(query, [email, senha], (err, results) => {
-=======
   
   req.dbConnection.query(query, [email, senha], (err, results) => {
->>>>>>> dd65a1025b52df6e111bdb49343ae933a116cc22
     if (err) {
-      console.error('Erro ao consultar o banco:', err);
-      return res.status(500).json({ 
-        success: false, 
+      console.error('Erro no banco:', err);
+      return res.status(500).json({
+        success: false,
         message: 'Erro interno no servidor',
         details: err.message
       });
     }
     
+    console.log(`Consulta executada. Resultados encontrados: ${results.length}`);
+    
     if (results.length > 0) {
-<<<<<<< HEAD
-      res.status(200).json({ success: true, user: results[0] });
-    } else {
-      res.status(401).json({ success: false, message: 'Email ou senha inválidos' });
-=======
-      // Usuário encontrado - login bem-sucedido
       const user = { ...results[0] };
-      
-      // Não enviar a senha na resposta por segurança
       delete user.senha;
       
-      res.status(200).json({ 
-        success: true, 
+      console.log('Login bem-sucedido para:', email);
+      res.json({
+        success: true,
         message: 'Login realizado com sucesso',
         user: user
       });
     } else {
-      // Usuário não encontrado ou credenciais inválidas
-      res.status(401).json({ 
-        success: false, 
-        message: 'Email ou senha inválidos' 
+      console.log('Credenciais inválidas para:', email);
+      res.status(401).json({
+        success: false,
+        message: 'Email ou senha inválidos'
       });
->>>>>>> dd65a1025b52df6e111bdb49343ae933a116cc22
     }
   });
 });
 
-<<<<<<< HEAD
-app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
-});
-=======
-// Tratamento de erros para rotas não encontradas
+// Rota não encontrada
 app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Rota não encontrada' });
 });
 
 // Iniciar servidor
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
-  console.log(`Acesse: http://192.168.1.112:${PORT}`);
+  console.log('SERVIDOR INICIADO COM SUCESSO!');
+  console.log(`Porta: ${PORT}`);
+  console.log(`IP Local: http://localhost:${PORT}`);
+  console.log(`IP Rede: http://10.136.23.237:${PORT}`);
+  console.log('TESTES DISPONÍVEIS:');
+  console.log(`• API Status: http://10.136.23.237:${PORT}/`);
+  console.log(`• Teste DB: http://10.136.23.237:${PORT}/test-db`);
+  console.log(`• Funcionários: http://10.136.23.237:${PORT}/funcionarios`);
 });
 
-// Tratamento de erros não capturados
 process.on('uncaughtException', (error) => {
   console.error('Erro não tratado:', error);
 });
 
-// Encerrar conexões ao finalizar o servidor
 process.on('SIGINT', () => {
+  console.log('Encerrando servidor...');
   pool.end(err => {
-    if (err) console.error('Erro ao encerrar conexões do pool:', err);
-    console.log('Conexões com o banco de dados encerradas');
+    if (err) console.error('Erro ao encerrar pool:', err);
+    console.log('Servidor encerrado');
     process.exit(0);
   });
 });
->>>>>>> dd65a1025b52df6e111bdb49343ae933a116cc22

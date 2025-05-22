@@ -1,121 +1,170 @@
 import React, { useState } from 'react';
-
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, SafeAreaView, StatusBar } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Image,
+  Alert
+} from 'react-native';
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Configuração base do axios
+const api = axios.create({
+  baseURL: 'http://10.136.23.237:3000',
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
-  const [senha, setSenha] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  const API_URL = 'http://10.136.23.237:3000/api';
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!email || !senha) {
-      setError('Preencha todos os campos.');
+    if (!email || !password) {
+      Alert.alert('Erro', 'Por favor, preencha todos os campos');
       return;
     }
 
+    setIsLoading(true);
+
     try {
-      setLoading(true);
-      const response = await axios.post(`${API_URL}/login`, { email, senha });
+      console.log('Tentando fazer login com:', { email: email.trim() });
+      
+      const response = await api.post('/login', {
+        email: email.trim(),
+        senha: password.trim()
+      });
+
+      console.log('Resposta do servidor:', response.data);
 
       if (response.data.success) {
-        setError(null);
-        navigation.replace('Home'); // ou 'Loading' se for o nome da próxima tela
+        const user = response.data.user;
+        
+        console.log('Dados do usuário recebidos:', user);
+
+        // Salva usuário localmente (sem a senha)
+        await AsyncStorage.setItem('usuarioLogado', JSON.stringify(user));
+        
+        console.log('Usuário salvo no AsyncStorage');
+
+        Alert.alert('Sucesso', `Bem-vindo, ${user.nome || user.Nome}!`);
+        navigation.replace('Home', { user });
       } else {
-        setError('Email ou senha inválidos.');
+        Alert.alert('Erro', 'Email ou senha inválidos');
       }
-    } catch (err) {
-      console.error('Erro ao fazer login:', err.message);
-      setError('Não foi possível conectar ao servidor.');
+    } catch (error) {
+      console.error('Erro completo:', error);
+      
+      if (error.response && error.response.status === 401) {
+        Alert.alert('Erro', 'Email ou senha inválidos');
+      } else {
+        let errorMessage = 'Erro de conexão desconhecido';
+
+        if (error.response) {
+          errorMessage = error.response.data.message || 'Erro no servidor';
+          console.log('Erro da resposta:', error.response.data);
+        } else if (error.request) {
+          errorMessage = 'Servidor não respondeu. Verifique se o servidor está rodando e se você está na mesma rede Wi-Fi.';
+        } else {
+          errorMessage = error.message;
+        }
+
+        Alert.alert('Erro de conexão', errorMessage);
+      }
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#000" />
-      <View style={styles.innerContainer}>
-        <Text style={styles.title}>Bem-vindo(a) de volta!</Text>
+    <View style={styles.container}>
+      <Text style={styles.title}>Olá,{"\n"}Bem Vindo(a){"\n"}de Volta</Text>
 
+      <View style={styles.form}>
         <TextInput
           placeholder="Email"
-          placeholderTextColor="#aaa"
+          placeholderTextColor="#888"
           style={styles.input}
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
           autoCapitalize="none"
+          autoCorrect={false}
         />
         <TextInput
           placeholder="Senha"
-          placeholderTextColor="#aaa"
-          style={styles.input}
-          value={senha}
-          onChangeText={setSenha}
+          placeholderTextColor="#888"
           secureTextEntry
+          style={styles.input}
+          value={password}
+          onChangeText={setPassword}
+          autoCapitalize="none"
+          autoCorrect={false}
         />
 
-        {error && <Text style={styles.errorText}>{error}</Text>}
-
-        <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
-          {loading ? (
-            <ActivityIndicator color="#000" />
-          ) : (
-            <Text style={styles.buttonText}>Entrar</Text>
-          )}
+        <TouchableOpacity
+          style={styles.button}
+          onPress={handleLogin}
+          disabled={isLoading}
+        >
+          <Text style={styles.buttonText}>
+            {isLoading ? 'Carregando...' : 'Login'}
+          </Text>
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
 
+      <Image source={require('../assets/Group 6.png')} style={styles.nome} />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-
   container: {
     flex: 1,
     backgroundColor: '#000',
-  },
-  innerContainer: {
-    flex: 1,
-    justifyContent: 'center',
     padding: 24,
+    justifyContent: 'space-around'
   },
   title: {
-    color: '#fff',
-    fontSize: 32,
-    fontWeight: 'bold',
-    marginBottom: 40,
+    color: '#FFF',
+    fontSize: 37,
+    lineHeight: 40,
+    marginTop: 60,
+    fontWeight: 'bold'
   },
   input: {
     backgroundColor: '#1E1D25',
-    color: '#fff',
-    borderRadius: 30,
-    height: 60,
+    color: '#FFF',
+    borderRadius: 35,
+    height: 70,
     paddingHorizontal: 20,
-    marginBottom: 20,
-    fontSize: 16,
+    marginBottom: 16,
+    fontSize: 16
   },
   button: {
-    backgroundColor: '#fff',
-    height: 60,
-    borderRadius: 30,
+    backgroundColor: '#FFF',
+    height: 70,
+    borderRadius: 35,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: 16
   },
   buttonText: {
     color: '#000',
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontWeight: 'bold'
   },
-  errorText: {
-    color: '#e74c3c',
-    textAlign: 'center',
-    marginTop: 10,
+  nome: {
+    marginLeft: 10
   },
+  form: {
+    height: 200,
+    marginBottom: 80
+  }
 });
