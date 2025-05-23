@@ -4,11 +4,13 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { LogBox } from 'react-native';
 LogBox.ignoreLogs(['[expo-av] Video component']);
 
+
+
 import SplashScreen from './screens/SplashScreen';
 import LoginScreen from './screens/LoginScreen';
 import LoadingScreen from './screens/LoadingScreen';
 import HomeScreen from './screens/HomeScreen';
-
+import PerfilScreen from './screens/PerfilScreen';
 
 const Stack = createStackNavigator();
 
@@ -20,6 +22,7 @@ export default function App() {
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Loading" component={LoadingScreen} />
         <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="Perfil" component={PerfilScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

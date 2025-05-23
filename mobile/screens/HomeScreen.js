@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   View, 
   Text, 
@@ -8,19 +8,14 @@ import {
   Modal, 
   Alert,
   ScrollView,
-  FlatList,
-  Animated,
-  Dimensions
+  FlatList
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const { width } = Dimensions.get('window');
-const MENU_WIDTH = width * 0.75;
+import Layout from '../components/Layout';
 
 export default function HomeScreen() {
   const [nomeUsuario, setNomeUsuario] = useState('Usuário');
-  const [nomeCompleto, setNomeCompleto] = useState('');
   const [dataAtual, setDataAtual] = useState({
     dia: 1,
     diaSemana: 'dom',
@@ -31,10 +26,6 @@ export default function HomeScreen() {
   const [todos, setTodos] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [novaTarefa, setNovaTarefa] = useState('');
-  const [menuVisible, setMenuVisible] = useState(false);
-  
-  const slideAnim = useRef(new Animated.Value(-MENU_WIDTH)).current;
-  const overlayAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     carregarNome();
@@ -48,9 +39,7 @@ export default function HomeScreen() {
       if (userData) {
         const usuario = JSON.parse(userData);
         const nome = usuario.nome || usuario.Nome || usuario.NOME || 'Usuário';
-        const nomeCompleto = usuario.NomeCompleto || usuario.nomeCompleto || nome;
         setNomeUsuario(nome);
-        setNomeCompleto(nomeCompleto);
       }
     } catch (error) {
       console.error('Erro ao carregar usuário:', error);
@@ -166,52 +155,6 @@ export default function HomeScreen() {
     );
   };
 
-  const toggleMenu = () => {
-    if (menuVisible) {
-      // Fechar menu
-      Animated.parallel([
-        Animated.timing(slideAnim, {
-          toValue: -MENU_WIDTH,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(overlayAnim, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start(() => setMenuVisible(false));
-    } else {
-      // Abrir menu
-      setMenuVisible(true);
-      Animated.parallel([
-        Animated.timing(slideAnim, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(overlayAnim, {
-          toValue: 0.5,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }
-  };
-
-  const closeMenu = () => {
-    if (menuVisible) {
-      toggleMenu();
-    }
-  };
-
-  const MenuItem = ({ icon, title, onPress, showBorder = true }) => (
-    <TouchableOpacity style={[styles.menuItem, !showBorder && styles.menuItemNoBorder]} onPress={onPress}>
-      <Ionicons name={icon} size={24} color="#333" style={styles.menuIcon} />
-      <Text style={styles.menuItemText}>{title}</Text>
-    </TouchableOpacity>
-  );
-
   const renderTodoItem = ({ item }) => (
     <View style={styles.todoItem}>
       <TouchableOpacity 
@@ -220,7 +163,7 @@ export default function HomeScreen() {
       >
         <View style={styles.todoCheckbox}>
           {item.concluida && (
-            <Ionicons name="checkmark" size={16} color="#5865F2" />
+            <Ionicons name="checkmark" size={16} color="#7373C5" />
           )}
         </View>
         <Text style={[
@@ -241,74 +184,8 @@ export default function HomeScreen() {
   );
 
   return (
-    <View style={styles.container}>
-      {/* Menu Lateral */}
-      {menuVisible && (
-        <>
-          <Animated.View 
-            style={[
-              styles.overlay, 
-              { opacity: overlayAnim }
-            ]}
-          >
-            <TouchableOpacity 
-              style={styles.overlayTouchable}
-              onPress={closeMenu}
-              activeOpacity={1}
-            />
-          </Animated.View>
-          
-          <Animated.View 
-            style={[
-              styles.sideMenu,
-              { transform: [{ translateX: slideAnim }] }
-            ]}
-          >
-            <View style={styles.menuHeader}>
-              <Text style={styles.menuHeaderText}>AUGEBIT</Text>
-            </View>
-            
-            <View style={styles.menuContent}>
-              <MenuItem icon="grid" title="Dashboard" />
-              <MenuItem icon="chatbubble-outline" title="Chat" />
-              <MenuItem icon="library-outline" title="Controle de produtos" />
-            </View>
-            
-            <View style={styles.menuFooter}>
-              <View style={styles.separator} />
-              <MenuItem icon="settings-outline" title="Configurações" showBorder={false} />
-              <MenuItem icon="exit-outline" title="Sair" showBorder={false} />
-              
-              <View style={styles.userInfo}>
-                <View style={styles.userAvatar}>
-                  <Text style={styles.userAvatarText}>
-                    {nomeCompleto.split(' ').map(name => name[0]).join('').substring(0, 2).toUpperCase()}
-                  </Text>
-                </View>
-                <View style={styles.userDetails}>
-                  <Text style={styles.userName}>{nomeCompleto}</Text>
-                  <Text style={styles.userEmail}>user@augebit.com</Text>
-                </View>
-              </View>
-            </View>
-          </Animated.View>
-        </>
-      )}
-
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.appName}>AUGEBIT</Text>
-        <View style={styles.headerIcons}>
-          <TouchableOpacity style={styles.iconButton}>
-            <Ionicons name="notifications-outline" size={24} color="#000" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton} onPress={toggleMenu}>
-            <Ionicons name="menu" size={24} color="#000" />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <ScrollView showsVerticalScrollIndicator={false}>
+    <Layout>
+      <ScrollView showsVerticalScrollIndicator={false} style={styles.container}>
         {/* Greeting */}
         <Text style={styles.greeting}>Olá,{'\n'}{nomeUsuario}</Text>
 
@@ -448,34 +325,14 @@ export default function HomeScreen() {
           </View>
         </View>
       </Modal>
-    </View>
+    </Layout>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
-    paddingTop: 50
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    marginBottom: 30
-  },
-  appName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#000'
-  },
-  headerIcons: {
-    flexDirection: 'row',
-    gap: 15
-  },
-  iconButton: {
-    padding: 5
+    paddingTop: 20
   },
   greeting: {
     fontSize: 32,
@@ -713,113 +570,5 @@ const styles = StyleSheet.create({
   modalButtonTextAdd: {
     color: '#FFF',
     fontWeight: 'bold'
-  },
-  // Estilos do Menu Lateral
-  overlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'black',
-    zIndex: 1000
-  },
-  overlayTouchable: {
-    flex: 1
-  },
-  sideMenu: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    bottom: 0,
-    width: MENU_WIDTH,
-    backgroundColor: '#FFF',
-    zIndex: 1001,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 2, height: 0 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84
-  },
-  menuHeader: {
-    backgroundColor: '#5865F2',
-    paddingTop: 60,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
-    alignItems: 'center'
-  },
-  menuHeaderText: {
-    color: '#FFF',
-    fontSize: 20,
-    fontWeight: 'bold'
-  },
-  menuContent: {
-    flex: 1,
-    paddingTop: 20
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0'
-  },
-  menuItemNoBorder: {
-    borderBottomWidth: 0
-  },
-  menuIcon: {
-    marginRight: 15,
-    width: 24
-  },
-  menuItemText: {
-    fontSize: 16,
-    color: '#333',
-    fontWeight: '500'
-  },
-  menuFooter: {
-    paddingBottom: 20
-  },
-  separator: {
-    height: 1,
-    backgroundColor: '#E0E0E0',
-    marginVertical: 10,
-    marginHorizontal: 20
-  },
-  userInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    marginTop: 10
-  },
-  userAvatar: {
-    width: 45,
-    height: 45,
-    borderRadius: 22.5,
-    backgroundColor: '#5865F2',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12
-  },
-  userAvatarText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: 'bold'
-  },
-  userDetails: {
-    flex: 1
-  },
-  userName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 2
-  },
-  userEmail: {
-    fontSize: 12,
-    color: '#666'
   }
 });
-
-
