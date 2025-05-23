@@ -2,7 +2,10 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, StatusBar, Alert } from 'react-native';
 import { User, Bell, Menu, Camera } from 'lucide-react-native';
 
-const ProfileScreen = () => {
+
+export default PerfilScreen;
+
+const PerfilScreen = () => {
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
@@ -203,5 +206,3 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f8f8',
   },
 });
-
-export default ProfileScreen;
