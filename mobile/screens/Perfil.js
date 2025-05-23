@@ -12,7 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Layout from '../components/Layout'; // Certifique-se que o caminho está correto
 
-export default function PerfilScreen() {
+export default function Perfil() {
   const [isEditing, setIsEditing] = useState(false);
   const [userData, setUserData] = useState({
     nome: 'João Silva',

@@ -197,15 +197,15 @@ export default function Layout({ children, showHeader = true }) {
                     {nomeCompleto.split(' ').map(name => name[0]).join('').substring(0, 2).toUpperCase()}
                   </Text>
                 </View>
-                <TouchableOpacity onPress={() => {
-                  closeMenu();
-                  navigation.navigate('PerfilScreen');
-                }}>
-                  <View style={styles.userDetails}>
-                    <Text style={styles.userName}>{nomeCompleto}</Text>
-                    <Text style={styles.userEmail}>user@augebit.com</Text>
-                  </View>
-                </TouchableOpacity>
+ <TouchableOpacity onPress={() => {
+    closeMenu();
+    navigation.navigate('Perfil'); // <-- MUDE AQUI: de 'PerfilScreen' para 'Perfil'
+  }}>
+    <View style={styles.userDetails}>
+      <Text style={styles.userName}>{nomeCompleto}</Text>
+      <Text style={styles.userEmail}>user@augebit.com</Text>
+    </View>
+  </TouchableOpacity>
               </View>
             </View>
           </Animated.View>
