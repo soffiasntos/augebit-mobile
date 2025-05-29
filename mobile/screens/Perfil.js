@@ -165,21 +165,26 @@ export default function Perfil() {
     }
   };
 
- const processarImagem = async (asset) => {
+const processarImagem = async (asset) => {
   try {
+    console.log('=== INICIANDO PROCESSO DE IMAGEM ===');
     setUploadingImage(true);
     
     // Converter para base64 se necessário
     let imageBase64;
     if (asset.base64) {
       imageBase64 = `data:image/jpeg;base64,${asset.base64}`;
+      console.log('Imagem convertida de base64');
     } else if (asset.uri) {
       imageBase64 = asset.uri;
+      console.log('Usando URI da imagem');
     } else {
       throw new Error('Formato de imagem não suportado');
     }
     
-    console.log('Enviando imagem para o servidor...');
+    console.log('Tamanho da imagem:', imageBase64.length);
+    console.log('URL da API:', `${API_URL}/funcionario/${userData.id}/foto`);
+    console.log('ID do usuário:', userData.id);
     
     // Fazer upload da imagem para o servidor
     const response = await fetch(`${API_URL}/funcionario/${userData.id}/foto`, {
@@ -192,10 +197,15 @@ export default function Perfil() {
       })
     });
 
+    console.log('Status da resposta:', response.status);
+    console.log('Headers da resposta:', response.headers);
+    
     const result = await response.json();
-    console.log('Resposta do servidor (foto):', result);
+    console.log('Resposta completa do servidor:', result);
 
     if (result.success) {
+      console.log('SUCESSO: Foto atualizada no servidor');
+      
       // Atualizar o estado local com a nova foto
       const updatedUserData = {
         ...userData,
@@ -215,16 +225,19 @@ export default function Perfil() {
           FotoPerfil: imageBase64
         };
         await AsyncStorage.setItem('usuarioLogado', JSON.stringify(updatedUser));
+        console.log('AsyncStorage atualizado');
       }
       
       Alert.alert('Sucesso', 'Foto de perfil atualizada com sucesso!');
     } else {
+      console.error('ERRO do servidor:', result);
       Alert.alert('Erro', result.message || 'Não foi possível atualizar a foto de perfil.');
     }
     
   } catch (error) {
-    console.error('Erro ao processar imagem:', error);
-    Alert.alert('Erro', 'Não foi possível processar a imagem. Verifique sua conexão.');
+    console.error('ERRO no catch:', error);
+    console.error('Stack trace:', error.stack);
+    Alert.alert('Erro', `Não foi possível processar a imagem: ${error.message}`);
   } finally {
     setUploadingImage(false);
   }
