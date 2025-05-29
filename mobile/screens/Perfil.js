@@ -174,17 +174,57 @@ export default function Perfil() {
     if (asset.base64) {
       imageBase64 = `data:image/jpeg;base64,${asset.base64}`;
     } else if (asset.uri) {
-      // Se for uma URI, você pode querer convertê-la para base64
-      // ou simplesmente usar a URI diretamente
       imageBase64 = asset.uri;
     } else {
       throw new Error('Formato de imagem não suportado');
     }
     
-    // Restante do código...
+    console.log('Enviando imagem para o servidor...');
+    
+    // Fazer upload da imagem para o servidor
+    const response = await fetch(`${API_URL}/funcionario/${userData.id}/foto`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        fotoPerfil: imageBase64
+      })
+    });
+
+    const result = await response.json();
+    console.log('Resposta do servidor (foto):', result);
+
+    if (result.success) {
+      // Atualizar o estado local com a nova foto
+      const updatedUserData = {
+        ...userData,
+        fotoPerfil: imageBase64
+      };
+      
+      setUserData(updatedUserData);
+      setEditedData(updatedUserData);
+      
+      // Atualizar AsyncStorage
+      const currentUser = await AsyncStorage.getItem('usuarioLogado');
+      if (currentUser) {
+        const user = JSON.parse(currentUser);
+        const updatedUser = {
+          ...user,
+          fotoPerfil: imageBase64,
+          FotoPerfil: imageBase64
+        };
+        await AsyncStorage.setItem('usuarioLogado', JSON.stringify(updatedUser));
+      }
+      
+      Alert.alert('Sucesso', 'Foto de perfil atualizada com sucesso!');
+    } else {
+      Alert.alert('Erro', result.message || 'Não foi possível atualizar a foto de perfil.');
+    }
+    
   } catch (error) {
     console.error('Erro ao processar imagem:', error);
-    Alert.alert('Erro', 'Não foi possível processar a imagem.');
+    Alert.alert('Erro', 'Não foi possível processar a imagem. Verifique sua conexão.');
   } finally {
     setUploadingImage(false);
   }

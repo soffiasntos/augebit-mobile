@@ -23,13 +23,20 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-app.use(express.json());
+// Aumentar limite do JSON para suportar imagens base64
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // Middleware para log de requests
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.originalUrl}`);
   if (req.body && Object.keys(req.body).length > 0) {
-    console.log('Body:', JSON.stringify(req.body, null, 2));
+    // Não logar imagens base64 completas para evitar spam no console
+    const bodyLog = { ...req.body };
+    if (bodyLog.fotoPerfil && bodyLog.fotoPerfil.length > 100) {
+      bodyLog.fotoPerfil = 'BASE64_IMAGE_DATA';
+    }
+    console.log('Body:', JSON.stringify(bodyLog, null, 2));
   }
   next();
 });
@@ -77,7 +84,171 @@ app.use((req, res, next) => {
   });
 });
 
-// Rota para obter estatísticas das requisições (ATUALIZADA)
+// ROTAS
+
+// Rota de status
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: 'API funcionando!',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Rota de teste do banco
+app.get('/test-db', (req, res) => {
+  req.dbConnection.query('SELECT 1 as test', (err, results) => {
+    if (err) {
+      return res.status(500).json({
+        success: false,
+        error: 'Erro na conexão com banco',
+        details: err.message
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Banco de dados conectado!',
+      test: results[0]
+    });
+  });
+});
+
+// Rota para atualizar foto de perfil
+app.put('/funcionario/:id/foto', (req, res) => {
+  try {
+    const { id } = req.params;
+    const { fotoPerfil } = req.body;
+
+    console.log(`Atualizando foto do funcionário ID: ${id}`);
+
+    if (!fotoPerfil) {
+      return res.status(400).json({
+        success: false,
+        message: 'Foto é obrigatória'
+      });
+    }
+
+    // Validar se é uma imagem base64 válida
+    if (!fotoPerfil.startsWith('data:image/')) {
+      return res.status(400).json({
+        success: false,
+        message: 'Formato de imagem inválido'
+      });
+    }
+
+    // Atualizar no banco de dados
+    const query = `UPDATE funcionarios SET FotoPerfil = ? WHERE id = ?`;
+    
+    req.dbConnection.query(query, [fotoPerfil, id], (err, results) => {
+      if (err) {
+        console.error('Erro ao atualizar foto:', err);
+        return res.status(500).json({
+          success: false,
+          message: 'Erro ao atualizar foto no banco de dados',
+          details: err.message
+        });
+      }
+
+      if (results.affectedRows === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Funcionário não encontrado'
+        });
+      }
+
+      console.log(`Foto atualizada com sucesso para funcionário ID: ${id}`);
+      
+      res.json({
+        success: true,
+        message: 'Foto de perfil atualizada com sucesso'
+      });
+    });
+
+  } catch (error) {
+    console.error('Erro ao processar atualização de foto:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  }
+});
+
+// Rota para buscar funcionário por ID
+app.get('/funcionario/:id', (req, res) => {
+  const { id } = req.params;
+  
+  const query = 'SELECT * FROM funcionarios WHERE id = ?';
+  
+  req.dbConnection.query(query, [id], (err, results) => {
+    if (err) {
+      console.error('Erro ao buscar funcionário:', err);
+      return res.status(500).json({
+        success: false,
+        error: 'Erro ao buscar funcionário',
+        details: err.message
+      });
+    }
+    
+    if (results.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Funcionário não encontrado'
+      });
+    }
+    
+    res.json({
+      success: true,
+      funcionario: results[0]
+    });
+  });
+});
+
+// Rota para atualizar funcionário
+app.put('/funcionario/:id', (req, res) => {
+  const { id } = req.params;
+  const { nome, nomeCompleto, email, senha, telefone, cargo, departamento } = req.body;
+  
+  let query = `
+    UPDATE funcionarios 
+    SET nome = ?, NomeCompleto = ?, email = ?, Telefone = ?, Cargo = ?, Departamento = ?
+  `;
+  let params = [nome, nomeCompleto, email, telefone, cargo, departamento];
+  
+  // Se senha foi fornecida, incluir na atualização
+  if (senha && senha !== '•••••••') {
+    query += ', senha = ?';
+    params.push(senha);
+  }
+  
+  query += ' WHERE id = ?';
+  params.push(id);
+  
+  req.dbConnection.query(query, params, (err, results) => {
+    if (err) {
+      console.error('Erro ao atualizar funcionário:', err);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao atualizar funcionário',
+        details: err.message
+      });
+    }
+    
+    if (results.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Funcionário não encontrado'
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Funcionário atualizado com sucesso'
+    });
+  });
+});
+
+// Rota para obter estatísticas das requisições
 app.get('/requisicoes/estatisticas', (req, res) => {
   const query = `
     SELECT 
@@ -109,8 +280,6 @@ app.get('/requisicoes/estatisticas', (req, res) => {
   });
 });
 
-// ... (mantenha o resto do seu backend existente)
-
 // Iniciar servidor
 app.listen(PORT, '0.0.0.0', () => {
   console.log('=================================');
@@ -123,13 +292,9 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log('ROTAS DISPONÍVEIS:');
   console.log(`• GET    / - Status da API`);
   console.log(`• GET    /test-db - Teste do banco`);
-  console.log(`• GET    /debug/routes - Lista todas as rotas`);
-  console.log(`• GET    /funcionarios - Lista todos os funcionários`);
   console.log(`• GET    /funcionario/:id - Busca funcionário por ID`);
   console.log(`• PUT    /funcionario/:id - Atualiza funcionário`);
-  console.log(`• POST   /login - Login de usuário`);
-  console.log(`• POST   /check-email - Verifica se email existe`);
+  console.log(`• PUT    /funcionario/:id/foto - Atualiza foto do funcionário`);
   console.log(`• GET    /requisicoes/estatisticas - Estatísticas de requisições`);
   console.log('=================================');
 });
-
