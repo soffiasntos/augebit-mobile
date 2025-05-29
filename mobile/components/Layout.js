@@ -132,23 +132,17 @@ export default function Layout({ children, showHeader = true }) {
             ]}
           >
             <View style={styles.menuHeader}>
-               <Image source={NomeLogo} style={{ width: 80, height: 20 }} resizeMode="contain" />
+               <Image source={NomeLogo} style={{ width: 150, height: 80 }} resizeMode="contain" />
             </View>
             
             <View style={styles.menuContent}>
-              <MenuItem 
-                icon="home-outline" 
-                title="Home" 
-                onPress={() => {
-                  closeMenu();
-                  navigation.navigate('Home');
-                }}
-              />
+            
               <MenuItem 
                 icon="grid" 
                 title="Dashboard" 
                 onPress={() => {
                   closeMenu();
+                  navigation.navigate('Home');
                   // navigation.navigate('Dashboard');
                 }}
               />
@@ -215,7 +209,7 @@ export default function Layout({ children, showHeader = true }) {
       {/* Header */}
       {showHeader && (
         <View style={styles.header}>
-          <Image source={nomeW} style={{ width: 80, height: 20 }} resizeMode="contain" />
+          <Image source={nomeW} style={{ width: 90, height: 30 }} resizeMode="contain" />
           <View style={styles.headerIcons}>
             <TouchableOpacity style={styles.iconButton}>
               <Ionicons name="notifications-outline" size={24} color="#000" />
@@ -293,7 +287,7 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 20,
     paddingHorizontal: 20,
-    alignItems: 'center'
+    alignItems: 'left'
   },
   menuContent: {
     flex: 1,

@@ -7,15 +7,18 @@ import {
   ScrollView,
   TextInput,
   Alert,
-  Image
+  Image,
+  Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as ImagePicker from 'expo-image-picker';
 import Layout from '../components/Layout';
 
 export default function Perfil() {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [userData, setUserData] = useState({
     id: '',
     nome: '',
@@ -25,7 +28,8 @@ export default function Perfil() {
     telefone: '',
     cargo: '',
     departamento: '',
-    dataAdmissao: ''
+    dataAdmissao: '',
+    fotoPerfil: null
   });
   const [editedData, setEditedData] = useState({ ...userData });
 
@@ -33,7 +37,17 @@ export default function Perfil() {
 
   useEffect(() => {
     carregarDadosUsuario();
+    solicitarPermissaoCamera();
   }, []);
+
+  const solicitarPermissaoCamera = async () => {
+    if (Platform.OS !== 'web') {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permissão necessária', 'Precisamos de permissão para acessar suas fotos.');
+      }
+    }
+  };
 
   const carregarDadosUsuario = async () => {
     try {
@@ -59,7 +73,8 @@ export default function Perfil() {
             telefone: dadosServidor.Telefone || dadosServidor.telefone || '',
             cargo: dadosServidor.Cargo || dadosServidor.cargo || '',
             departamento: dadosServidor.Departamento || dadosServidor.departamento || '',
-            dataAdmissao: dadosServidor.DataAdmissao || dadosServidor.dataAdmissao || ''
+            dataAdmissao: dadosServidor.DataAdmissao || dadosServidor.dataAdmissao || '',
+            fotoPerfil: dadosServidor.FotoPerfil || dadosServidor.fotoPerfil || null
           };
           
           setUserData(newUserData);
@@ -75,7 +90,8 @@ export default function Perfil() {
             telefone: usuario.Telefone || usuario.telefone || '',
             cargo: usuario.Cargo || usuario.cargo || '',
             departamento: usuario.Departamento || usuario.departamento || '',
-            dataAdmissao: usuario.DataAdmissao || usuario.dataAdmissao || ''
+            dataAdmissao: usuario.DataAdmissao || usuario.dataAdmissao || '',
+            fotoPerfil: usuario.FotoPerfil || usuario.fotoPerfil || null
           };
           
           setUserData(newUserData);
@@ -90,22 +106,154 @@ export default function Perfil() {
     }
   };
 
+  const selecionarImagem = async () => {
+    try {
+      Alert.alert(
+        'Selecionar Foto',
+        'Escolha uma opção:',
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          { text: 'Galeria', onPress: () => abrirGaleria() },
+          { text: 'Câmera', onPress: () => abrirCamera() }
+        ]
+      );
+    } catch (error) {
+      console.error('Erro ao selecionar imagem:', error);
+    }
+  };
+
+  const abrirGaleria = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+        base64: true
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        await processarImagem(result.assets[0]);
+      }
+    } catch (error) {
+      console.error('Erro ao abrir galeria:', error);
+      Alert.alert('Erro', 'Não foi possível abrir a galeria.');
+    }
+  };
+
+  const abrirCamera = async () => {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permissão necessária', 'Precisamos de permissão para usar a câmera.');
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+        base64: true
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        await processarImagem(result.assets[0]);
+      }
+    } catch (error) {
+      console.error('Erro ao abrir câmera:', error);
+      Alert.alert('Erro', 'Não foi possível abrir a câmera.');
+    }
+  };
+
+  const processarImagem = async (asset) => {
+    try {
+      setUploadingImage(true);
+      
+      // Converter para base64 se necessário
+      const imageBase64 = asset.base64 ? `data:image/jpeg;base64,${asset.base64}` : asset.uri;
+      
+      // Atualizar no servidor
+      const response = await fetch(`${API_URL}/funcionario/${userData.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fotoPerfil: imageBase64
+        })
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        // Atualizar estado local
+        const newUserData = { ...userData, fotoPerfil: imageBase64 };
+        setUserData(newUserData);
+        setEditedData(newUserData);
+        
+        // Atualizar AsyncStorage
+        const currentUser = await AsyncStorage.getItem('usuarioLogado');
+        if (currentUser) {
+          const user = JSON.parse(currentUser);
+          const updatedUser = {
+            ...user,
+            fotoPerfil: imageBase64,
+            FotoPerfil: imageBase64
+          };
+          
+          await AsyncStorage.setItem('usuarioLogado', JSON.stringify(updatedUser));
+        }
+        
+        Alert.alert('Sucesso', 'Foto de perfil atualizada com sucesso!');
+      } else {
+        Alert.alert('Erro', 'Não foi possível atualizar a foto de perfil.');
+      }
+    } catch (error) {
+      console.error('Erro ao processar imagem:', error);
+      Alert.alert('Erro', 'Não foi possível processar a imagem.');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   const handleSave = async () => {
     try {
       setLoading(true);
       
+      // Validações básicas
+      if (!editedData.nome.trim()) {
+        Alert.alert('Erro', 'O nome é obrigatório.');
+        return;
+      }
+      
+      if (!editedData.email.trim()) {
+        Alert.alert('Erro', 'O email é obrigatório.');
+        return;
+      }
+      
+      // Validar formato do email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(editedData.email)) {
+        Alert.alert('Erro', 'Por favor, insira um email válido.');
+        return;
+      }
+      
       // Preparar dados para envio (sem senha se não foi alterada)
       const dadosParaEnvio = {
-        nome: editedData.nome,
-        nomeCompleto: editedData.nomeCompleto,
-        email: editedData.email,
-        telefone: editedData.telefone,
-        cargo: editedData.cargo,
-        departamento: editedData.departamento
+        nome: editedData.nome.trim(),
+        nomeCompleto: editedData.nomeCompleto.trim(),
+        email: editedData.email.trim(),
+        telefone: editedData.telefone.trim(),
+        cargo: editedData.cargo.trim(),
+        departamento: editedData.departamento.trim()
       };
 
       // Se o campo senha foi alterado (não é mais •••••••), incluir na atualização
       if (editedData.senha !== '•••••••' && editedData.senha.trim() !== '') {
+        if (editedData.senha.length < 6) {
+          Alert.alert('Erro', 'A senha deve ter pelo menos 6 caracteres.');
+          return;
+        }
         dadosParaEnvio.senha = editedData.senha;
       }
 
@@ -194,6 +342,14 @@ export default function Perfil() {
     </View>
   );
 
+  const getImageSource = () => {
+    if (userData.fotoPerfil) {
+      return { uri: userData.fotoPerfil };
+    }
+    // Imagem padrão
+    return { uri: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=200&h=200&fit=crop&crop=face' };
+  };
+
   if (loading) {
     return (
       <Layout showHeader={true}>
@@ -212,12 +368,21 @@ export default function Perfil() {
           <View style={styles.avatarContainer}>
             <View style={styles.avatar}>
               <Image 
-                source={{ uri: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=200&h=200&fit=crop&crop=face' }}
+                source={getImageSource()}
                 style={styles.avatarImage}
+                onError={() => console.log('Erro ao carregar imagem')}
               />
             </View>
-            <TouchableOpacity style={styles.cameraButton}>
-              <Ionicons name="camera" size={16} color="#fff" />
+            <TouchableOpacity 
+              style={styles.cameraButton} 
+              onPress={selecionarImagem}
+              disabled={uploadingImage}
+            >
+              {uploadingImage ? (
+                <Ionicons name="hourglass" size={16} color="#fff" />
+              ) : (
+                <Ionicons name="camera" size={16} color="#fff" />
+              )}
             </TouchableOpacity>
           </View>
           <Text style={styles.profileName}>{userData.nomeCompleto}</Text>
@@ -299,28 +464,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
   },
-  customHeader: {
-    backgroundColor: '#fff',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  headerIcons: {
-    flexDirection: 'row',
-    gap: 15,
-  },
-  headerIcon: {
-    padding: 5,
-  },
   profileHeader: {
     backgroundColor: '#fff',
     alignItems: 'center',
@@ -336,6 +479,7 @@ const styles = StyleSheet.create({
     height: 120,
     borderRadius: 60,
     overflow: 'hidden',
+    backgroundColor: '#f0f0f0',
   },
   avatarImage: {
     width: '100%',
@@ -372,7 +516,7 @@ const styles = StyleSheet.create({
     paddingBottom: 30,
   },
   editButton: {
-    backgroundColor: '#7C3AED',
+    backgroundColor: '#6366F1',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -462,4 +606,6 @@ const styles = StyleSheet.create({
   bottomSpacing: {
     height: 50,
   },
+
+  
 });
