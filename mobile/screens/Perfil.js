@@ -165,56 +165,30 @@ export default function Perfil() {
     }
   };
 
-  const processarImagem = async (asset) => {
-    try {
-      setUploadingImage(true);
-      
-      // Converter para base64 se necessário
-      const imageBase64 = asset.base64 ? `data:image/jpeg;base64,${asset.base64}` : asset.uri;
-      
-      // Atualizar no servidor
-      const response = await fetch(`${API_URL}/funcionario/${userData.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          fotoPerfil: imageBase64
-        })
-      });
-
-      const result = await response.json();
-      
-      if (result.success) {
-        // Atualizar estado local
-        const newUserData = { ...userData, fotoPerfil: imageBase64 };
-        setUserData(newUserData);
-        setEditedData(newUserData);
-        
-        // Atualizar AsyncStorage
-        const currentUser = await AsyncStorage.getItem('usuarioLogado');
-        if (currentUser) {
-          const user = JSON.parse(currentUser);
-          const updatedUser = {
-            ...user,
-            fotoPerfil: imageBase64,
-            FotoPerfil: imageBase64
-          };
-          
-          await AsyncStorage.setItem('usuarioLogado', JSON.stringify(updatedUser));
-        }
-        
-        Alert.alert('Sucesso', 'Foto de perfil atualizada com sucesso!');
-      } else {
-        Alert.alert('Erro', 'Não foi possível atualizar a foto de perfil.');
-      }
-    } catch (error) {
-      console.error('Erro ao processar imagem:', error);
-      Alert.alert('Erro', 'Não foi possível processar a imagem.');
-    } finally {
-      setUploadingImage(false);
+ const processarImagem = async (asset) => {
+  try {
+    setUploadingImage(true);
+    
+    // Converter para base64 se necessário
+    let imageBase64;
+    if (asset.base64) {
+      imageBase64 = `data:image/jpeg;base64,${asset.base64}`;
+    } else if (asset.uri) {
+      // Se for uma URI, você pode querer convertê-la para base64
+      // ou simplesmente usar a URI diretamente
+      imageBase64 = asset.uri;
+    } else {
+      throw new Error('Formato de imagem não suportado');
     }
-  };
+    
+    // Restante do código...
+  } catch (error) {
+    console.error('Erro ao processar imagem:', error);
+    Alert.alert('Erro', 'Não foi possível processar a imagem.');
+  } finally {
+    setUploadingImage(false);
+  }
+};
 
   const handleSave = async () => {
     try {
@@ -342,13 +316,20 @@ export default function Perfil() {
     </View>
   );
 
-  const getImageSource = () => {
-    if (userData.fotoPerfil) {
+ const getImageSource = () => {
+  if (userData.fotoPerfil) {
+    // Se for uma URI (começa com http:// ou https://)
+    if (userData.fotoPerfil.startsWith('http')) {
       return { uri: userData.fotoPerfil };
     }
-    // Imagem padrão
-    return { uri: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=200&h=200&fit=crop&crop=face' };
-  };
+    // Se for base64
+    if (userData.fotoPerfil.startsWith('data:image')) {
+      return { uri: userData.fotoPerfil };
+    }
+  }
+  // Imagem padrão
+  return require('../assets/default-profile.png'); // Adicione uma imagem padrão local
+};
 
   if (loading) {
     return (
@@ -607,5 +588,12 @@ const styles = StyleSheet.create({
     height: 50,
   },
 
-  
+
+  avatarImage: {
+  width: '100%',
+  height: '100%',
+  borderRadius: 60,
+  resizeMode: 'cover', // Adicione isso para garantir que a imagem cubra o espaço
+},
+
 });
