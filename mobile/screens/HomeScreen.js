@@ -28,8 +28,10 @@ export default function HomeScreen() {
   const [todos, setTodos] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [novaTarefa, setNovaTarefa] = useState('');
-  const [estatisticasRequisicoes, setEstatisticasRequisicoes] = useState([]);
-  const [loadingRequisicoes, setLoadingRequisicoes] = useState(true);
+
+
+ const [requisicoesMateriais, setRequisicoesMateriais] = useState([]);
+const [loadingMateriais, setLoadingMateriais] = useState(true);
 
   const [fontsLoaded] = useFonts({
     'Poppins-Regular': require('../assets/fonts/PoppinsRegular.ttf'),
@@ -39,10 +41,13 @@ export default function HomeScreen() {
   });
 
   useEffect(() => {
+
+}, []);
+
+  useEffect(() => {
     carregarNome();
     atualizarData();
     carregarTodos();
-    buscarEstatisticasRequisicoes();
   }, []);
 
   const carregarNome = async () => {
@@ -114,55 +119,7 @@ export default function HomeScreen() {
     }
   };
 
-  const buscarEstatisticasRequisicoes = async () => {
-    setLoadingRequisicoes(true);
-    try {
-      console.log('Buscando estatísticas de requisições...');
-      
-      // Tentar primeiro a rota principal
-      let response = await fetch('http://10.136.23.237:3000/requisicoes/estatisticas');
-      let data = await response.json();
-      
-      // Se não funcionar, tentar a rota alternativa
-      if (!data.success) {
-        console.log('Tentando rota alternativa...');
-        response = await fetch('http://10.136.23.237:3000/requisicoes/estatisticas-alt');
-        data = await response.json();
-      }
-      
-      // Se ainda não funcionar, usar dados mock para demonstração
-      if (!data.success) {
-        console.log('Usando dados mock...');
-        response = await fetch('http://10.136.23.237:3000/requisicoes/estatisticas-mock');
-        data = await response.json();
-      }
-      
-      if (data.success && data.estatisticas) {
-        console.log('Estatísticas carregadas:', data.estatisticas);
-        setEstatisticasRequisicoes(data.estatisticas);
-      } else {
-        console.log('Nenhum dado encontrado');
-        setEstatisticasRequisicoes([]);
-      }
-    } catch (error) {
-      console.error('Erro ao buscar estatísticas:', error);
-      
-      // Dados mock como fallback em caso de erro
-      const mockData = [
-        { mes: '2024-12', total: 0, atendidas: 0, pendentes: 0, atrasadas: 0 },
-        { mes: '2025-01', total: 0, atendidas: 0, pendentes: 0, atrasadas: 0 },
-        { mes: '2025-02', total: 0, atendidas: 0, pendentes: 0, atrasadas: 0 },
-        { mes: '2025-03', total: 13, atendidas: 9, pendentes: 3, atrasadas: 1 },
-        { mes: '2025-04', total: 4, atendidas: 2, pendentes: 1, atrasadas: 1 },
-        { mes: '2025-05', total: 8, atendidas: 5, pendentes: 2, atrasadas: 1 }
-      ];
-      
-      setEstatisticasRequisicoes(mockData);
-      console.log('Usando dados mock devido ao erro');
-    } finally {
-      setLoadingRequisicoes(false);
-    }
-  };
+  
 
   const salvarTodos = async (novosTodos) => {
     try {
@@ -240,7 +197,7 @@ export default function HomeScreen() {
     }));
   };
 
-  const dadosGrafico = calcularAlturasGrafico();
+
 
   const renderTodoItem = ({ item }) => (
     <View style={styles.todoItem}>
@@ -322,89 +279,10 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Chart Card - Requisições de Materiais */}
-        <View style={styles.chartCard}>
-          <View style={styles.chartTitleContainer}>
-            <Text style={styles.chartTitle}>
-              Requisições de materiais{'\n'}
-              <Text style={styles.chartTitleHighlight}>nos últimos meses</Text>
-            </Text>
-            <TouchableOpacity 
-              style={styles.refreshButton}
-              onPress={buscarEstatisticasRequisicoes}
-            >
-              <Ionicons name="refresh" size={20} color="#6366F1" />
-            </TouchableOpacity>
-          </View>
-          
-          {loadingRequisicoes ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color="#6366F1" />
-              <Text style={styles.loadingText}>Carregando dados...</Text>
-            </View>
-          ) : dadosGrafico.length > 0 ? (
-            <>
-              <View style={styles.chartContainer}>
-                {dadosGrafico.map((item, index) => (
-                  <View key={index} style={styles.chartBar}>
-                    <Text style={styles.barLabel}>{item.total}</Text>
-                    <View style={styles.barBackground}>
-                      <View 
-                        style={[
-                          styles.barTotal, 
-                          { height: Math.max(item.alturaTotal, 4) }
-                        ]} 
-                      />
-                      <View 
-                        style={[
-                          styles.barAtendidas, 
-                          { height: Math.max(item.alturaAtendidas, 2) }
-                        ]} 
-                      />
-                    </View>
-                    <Text style={styles.barMonth}>{item.mes}</Text>
-                  </View>
-                ))}
-              </View>
-              
-              <View style={styles.legendContainer}>
-                <View style={styles.legendItem}>
-                  <View style={[styles.legendColor, { backgroundColor: '#4B5563' }]} />
-                  <Text style={styles.legendText}>Total</Text>
-                </View>
-                <View style={styles.legendItem}>
-                  <View style={[styles.legendColor, { backgroundColor: '#6366F1' }]} />
-                  <Text style={styles.legendText}>Atendidas</Text>
-                </View>
-              </View>
-              
-              <View style={styles.summaryContainer}>
-                <Text style={styles.summaryText}>
-                  Total de requisições: {estatisticasRequisicoes.reduce((sum, item) => sum + item.total, 0)}
-                </Text>
-                <Text style={styles.summaryText}>
-                  Taxa de atendimento: {
-                    estatisticasRequisicoes.reduce((sum, item) => sum + item.total, 0) > 0
-                      ? Math.round(
-                          (estatisticasRequisicoes.reduce((sum, item) => sum + item.atendidas, 0) /
-                            estatisticasRequisicoes.reduce((sum, item) => sum + item.total, 0)) * 100
-                        ) + '%' 
-                      : '0%'
-                  }
-                </Text>
-              </View>
-            </>
-          ) : (
-            <View style={styles.emptyContainer}>
-              <Ionicons name="bar-chart-outline" size={48} color="#4B5563" />
-              <Text style={styles.emptyText}>Nenhum dado disponível</Text>
-              <Text style={styles.emptySubtext}>
-                Verifique se há dados na tabela requisicoes
-              </Text>
-            </View>
-          )}
-        </View>
-
+      {/* Chart Card - Requisições de Materiais */}
+<View style={styles.chartCard}>
+ 
+</View>
         {/* Todo Card */}
         <View style={styles.todoCard}>
           <View style={styles.todoHeader}>
@@ -810,5 +688,43 @@ const styles = StyleSheet.create({
   modalButtonTextAdd: {
     color: '#FFFFFF',
     fontFamily: 'Poppins-SemiBold'
-  }
+  },
+  // Adicione/atualize estilos
+chartContainer: {
+  flexDirection: 'row',
+  justifyContent: 'space-around',
+  alignItems: 'flex-end',
+  height: 140,
+  paddingHorizontal: 10
+},
+chartBar: {
+  alignItems: 'center',
+  flex: 1
+},
+barBackground: {
+  width: 32,
+  backgroundColor: 'transparent',
+  borderRadius: 6,
+  marginBottom: 12,
+  height: '100%',
+  justifyContent: 'flex-end'
+},
+barTotal: {
+  width: '100%',
+  backgroundColor: '#6366F1',
+  borderRadius: 6,
+  position: 'absolute',
+  bottom: 0
+},
+barLabel: {
+  color: '#FFFFFF',
+  fontSize: 14,
+  fontFamily: 'Poppins-SemiBold',
+  marginBottom: 4
+},
+barMonth: {
+  color: '#6B7280',
+  fontSize: 12,
+  fontFamily: 'Poppins-Regular'
+},
 });
