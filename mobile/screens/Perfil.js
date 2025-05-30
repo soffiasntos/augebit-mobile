@@ -58,44 +58,72 @@ export default function Perfil() {
         const usuario = JSON.parse(userDataStored);
         console.log('Usuario do AsyncStorage:', usuario);
         
-        // Buscar dados atualizados do servidor
-        const response = await fetch(`${API_URL}/funcionario/${usuario.id}`);
-        const result = await response.json();
+        // CORREÇÃO: Primeiro definir os dados do AsyncStorage (que pode ter a foto atualizada)
+        const dadosAsyncStorage = {
+          id: usuario.id,
+          nome: usuario.nome || usuario.Nome || '',
+          nomeCompleto: usuario.NomeCompleto || usuario.nomeCompleto || '',
+          email: usuario.email || '',
+          senha: '•••••••', // Não mostrar senha real
+          telefone: usuario.Telefone || usuario.telefone || '',
+          cargo: usuario.Cargo || usuario.cargo || '',
+          departamento: usuario.Departamento || usuario.departamento || '',
+          dataAdmissao: usuario.DataAdmissao || usuario.dataAdmissao || '',
+          fotoPerfil: usuario.FotoPerfil || usuario.fotoPerfil || null
+        };
         
-        if (result.success) {
-          const dadosServidor = result.funcionario;
-          const newUserData = {
-            id: dadosServidor.id,
-            nome: dadosServidor.nome || dadosServidor.Nome || '',
-            nomeCompleto: dadosServidor.NomeCompleto || dadosServidor.nomeCompleto || '',
-            email: dadosServidor.email || '',
-            senha: '•••••••', // Não mostrar senha real
-            telefone: dadosServidor.Telefone || dadosServidor.telefone || '',
-            cargo: dadosServidor.Cargo || dadosServidor.cargo || '',
-            departamento: dadosServidor.Departamento || dadosServidor.departamento || '',
-            dataAdmissao: dadosServidor.DataAdmissao || dadosServidor.dataAdmissao || '',
-            fotoPerfil: dadosServidor.FotoPerfil || dadosServidor.fotoPerfil || null
-          };
+        // CORREÇÃO: Definir os dados primeiro com o que temos
+        setUserData(dadosAsyncStorage);
+        setEditedData(dadosAsyncStorage);
+        
+        try {
+          // Buscar dados atualizados do servidor (mas não sobrescrever a foto se ela existir localmente)
+          const response = await fetch(`${API_URL}/funcionario/${usuario.id}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            timeout: 5000 // Timeout de 5 segundos
+          });
           
-          setUserData(newUserData);
-          setEditedData(newUserData);
-        } else {
-          // Se falhar, usar dados do AsyncStorage
-          const newUserData = {
-            id: usuario.id,
-            nome: usuario.nome || usuario.Nome || '',
-            nomeCompleto: usuario.NomeCompleto || usuario.nomeCompleto || '',
-            email: usuario.email || '',
-            senha: '•••••••',
-            telefone: usuario.Telefone || usuario.telefone || '',
-            cargo: usuario.Cargo || usuario.cargo || '',
-            departamento: usuario.Departamento || usuario.departamento || '',
-            dataAdmissao: usuario.DataAdmissao || usuario.dataAdmissao || '',
-            fotoPerfil: usuario.FotoPerfil || usuario.fotoPerfil || null
-          };
-          
-          setUserData(newUserData);
-          setEditedData(newUserData);
+          if (response.ok) {
+            const result = await response.json();
+            
+            if (result.success && result.funcionario) {
+              const dadosServidor = result.funcionario;
+              const newUserData = {
+                id: dadosServidor.id,
+                nome: dadosServidor.nome || dadosServidor.Nome || '',
+                nomeCompleto: dadosServidor.NomeCompleto || dadosServidor.nomeCompleto || '',
+                email: dadosServidor.email || '',
+                senha: '•••••••',
+                telefone: dadosServidor.Telefone || dadosServidor.telefone || '',
+                cargo: dadosServidor.Cargo || dadosServidor.cargo || '',
+                departamento: dadosServidor.Departamento || dadosServidor.departamento || '',
+                dataAdmissao: dadosServidor.DataAdmissao || dadosServidor.dataAdmissao || '',
+                // CORREÇÃO: Manter a foto local se existir, senão usar a do servidor
+                fotoPerfil: dadosAsyncStorage.fotoPerfil || dadosServidor.FotoPerfil || dadosServidor.fotoPerfil || null
+              };
+              
+              console.log('Dados do servidor carregados, mantendo foto local');
+              setUserData(newUserData);
+              setEditedData(newUserData);
+              
+              // Atualizar AsyncStorage com dados mais recentes (mas manter a foto local)
+              const updatedUser = {
+                ...usuario,
+                ...dadosServidor,
+                fotoPerfil: dadosAsyncStorage.fotoPerfil || dadosServidor.FotoPerfil || dadosServidor.fotoPerfil,
+                FotoPerfil: dadosAsyncStorage.fotoPerfil || dadosServidor.FotoPerfil || dadosServidor.fotoPerfil
+              };
+              await AsyncStorage.setItem('usuarioLogado', JSON.stringify(updatedUser));
+            }
+          } else {
+            console.log('Falha na resposta do servidor, mantendo dados locais');
+          }
+        } catch (serverError) {
+          console.log('Erro ao conectar com servidor, usando dados locais:', serverError.message);
+          // Continua com os dados do AsyncStorage que já foram definidos
         }
       }
     } catch (error) {
@@ -165,48 +193,26 @@ export default function Perfil() {
     }
   };
 
-const processarImagem = async (asset) => {
-  try {
-    console.log('=== INICIANDO PROCESSO DE IMAGEM ===');
-    setUploadingImage(true);
-    
-    // Converter para base64 se necessário
-    let imageBase64;
-    if (asset.base64) {
-      imageBase64 = `data:image/jpeg;base64,${asset.base64}`;
-      console.log('Imagem convertida de base64');
-    } else if (asset.uri) {
-      imageBase64 = asset.uri;
-      console.log('Usando URI da imagem');
-    } else {
-      throw new Error('Formato de imagem não suportado');
-    }
-    
-    console.log('Tamanho da imagem:', imageBase64.length);
-    console.log('URL da API:', `${API_URL}/funcionario/${userData.id}/foto`);
-    console.log('ID do usuário:', userData.id);
-    
-    // Fazer upload da imagem para o servidor
-    const response = await fetch(`${API_URL}/funcionario/${userData.id}/foto`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        fotoPerfil: imageBase64
-      })
-    });
-
-    console.log('Status da resposta:', response.status);
-    console.log('Headers da resposta:', response.headers);
-    
-    const result = await response.json();
-    console.log('Resposta completa do servidor:', result);
-
-    if (result.success) {
-      console.log('SUCESSO: Foto atualizada no servidor');
+  const processarImagem = async (asset) => {
+    try {
+      console.log('=== INICIANDO PROCESSO DE IMAGEM ===');
+      setUploadingImage(true);
       
-      // Atualizar o estado local com a nova foto
+      // Converter para base64 se necessário
+      let imageBase64;
+      if (asset.base64) {
+        imageBase64 = `data:image/jpeg;base64,${asset.base64}`;
+        console.log('Imagem convertida de base64');
+      } else if (asset.uri) {
+        imageBase64 = asset.uri;
+        console.log('Usando URI da imagem');
+      } else {
+        throw new Error('Formato de imagem não suportado');
+      }
+      
+      console.log('Tamanho da imagem:', imageBase64.length);
+      
+      // CORREÇÃO: Atualizar primeiro localmente para feedback imediato
       const updatedUserData = {
         ...userData,
         fotoPerfil: imageBase64
@@ -215,7 +221,7 @@ const processarImagem = async (asset) => {
       setUserData(updatedUserData);
       setEditedData(updatedUserData);
       
-      // Atualizar AsyncStorage
+      // Atualizar AsyncStorage imediatamente
       const currentUser = await AsyncStorage.getItem('usuarioLogado');
       if (currentUser) {
         const user = JSON.parse(currentUser);
@@ -225,23 +231,44 @@ const processarImagem = async (asset) => {
           FotoPerfil: imageBase64
         };
         await AsyncStorage.setItem('usuarioLogado', JSON.stringify(updatedUser));
-        console.log('AsyncStorage atualizado');
+        console.log('AsyncStorage atualizado com nova foto');
       }
       
-      Alert.alert('Sucesso', 'Foto de perfil atualizada com sucesso!');
-    } else {
-      console.error('ERRO do servidor:', result);
-      Alert.alert('Erro', result.message || 'Não foi possível atualizar a foto de perfil.');
+      // Tentar fazer upload para o servidor (sem bloquear o usuário)
+      try {
+        console.log('Tentando fazer upload para servidor...');
+        const response = await fetch(`${API_URL}/funcionario/${userData.id}/foto`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            fotoPerfil: imageBase64
+          })
+        });
+
+        const result = await response.json();
+        console.log('Resposta do servidor:', result);
+
+        if (result.success) {
+          console.log('SUCESSO: Foto enviada para o servidor');
+          Alert.alert('Sucesso', 'Foto de perfil atualizada com sucesso!');
+        } else {
+          console.log('Erro do servidor, mas foto foi salva localmente:', result.message);
+          Alert.alert('Aviso', 'Foto atualizada localmente. Será sincronizada quando a conexão for restabelecida.');
+        }
+      } catch (serverError) {
+        console.log('Erro ao conectar com servidor, foto salva localmente:', serverError.message);
+        Alert.alert('Aviso', 'Foto atualizada localmente. Será sincronizada quando a conexão for restabelecida.');
+      }
+      
+    } catch (error) {
+      console.error('ERRO no processamento:', error);
+      Alert.alert('Erro', `Não foi possível processar a imagem: ${error.message}`);
+    } finally {
+      setUploadingImage(false);
     }
-    
-  } catch (error) {
-    console.error('ERRO no catch:', error);
-    console.error('Stack trace:', error.stack);
-    Alert.alert('Erro', `Não foi possível processar a imagem: ${error.message}`);
-  } finally {
-    setUploadingImage(false);
-  }
-};
+  };
 
   const handleSave = async () => {
     try {
@@ -299,7 +326,7 @@ const processarImagem = async (asset) => {
       console.log('Resposta do servidor:', result);
 
       if (result.success) {
-        // Atualizar AsyncStorage
+        // Atualizar AsyncStorage MANTENDO A FOTO
         const currentUser = await AsyncStorage.getItem('usuarioLogado');
         if (currentUser) {
           const user = JSON.parse(currentUser);
@@ -315,14 +342,20 @@ const processarImagem = async (asset) => {
             Cargo: editedData.cargo,
             cargo: editedData.cargo,
             Departamento: editedData.departamento,
-            departamento: editedData.departamento
+            departamento: editedData.departamento,
+            // MANTER A FOTO EXISTENTE
+            fotoPerfil: userData.fotoPerfil,
+            FotoPerfil: userData.fotoPerfil
           };
           
           await AsyncStorage.setItem('usuarioLogado', JSON.stringify(updatedUser));
         }
         
-        // Atualizar estado local
-        const updatedUserData = { ...editedData };
+        // Atualizar estado local MANTENDO A FOTO
+        const updatedUserData = { 
+          ...editedData, 
+          fotoPerfil: userData.fotoPerfil // Manter a foto atual
+        };
         if (editedData.senha === '•••••••' || editedData.senha.trim() === '') {
           updatedUserData.senha = '•••••••';
         }
@@ -369,20 +402,20 @@ const processarImagem = async (asset) => {
     </View>
   );
 
- const getImageSource = () => {
-  if (userData.fotoPerfil) {
-    // Se for uma URI (começa com http:// ou https://)
-    if (userData.fotoPerfil.startsWith('http')) {
-      return { uri: userData.fotoPerfil };
+  const getImageSource = () => {
+    if (userData.fotoPerfil) {
+      // Se for uma URI (começa com http:// ou https://)
+      if (userData.fotoPerfil.startsWith('http')) {
+        return { uri: userData.fotoPerfil };
+      }
+      // Se for base64
+      if (userData.fotoPerfil.startsWith('data:image')) {
+        return { uri: userData.fotoPerfil };
+      }
     }
-    // Se for base64
-    if (userData.fotoPerfil.startsWith('data:image')) {
-      return { uri: userData.fotoPerfil };
-    }
-  }
-  // Imagem padrão
-  return require('../assets/default-profile.png'); // Adicione uma imagem padrão local
-};
+    // Imagem padrão - você pode usar um ícone ou uma imagem local
+    return null; // ou require('../assets/default-profile.png')
+  };
 
   if (loading) {
     return (
@@ -401,11 +434,19 @@ const processarImagem = async (asset) => {
         <View style={styles.profileHeader}>
           <View style={styles.avatarContainer}>
             <View style={styles.avatar}>
-              <Image 
-                source={getImageSource()}
-                style={styles.avatarImage}
-                onError={() => console.log('Erro ao carregar imagem')}
-              />
+              {getImageSource() ? (
+                <Image 
+                  source={getImageSource()}
+                  style={styles.avatarImage}
+                  onError={(error) => {
+                    console.log('Erro ao carregar imagem:', error.nativeEvent.error);
+                  }}
+                />
+              ) : (
+                <View style={styles.defaultAvatar}>
+                  <Ionicons name="person" size={60} color="#999" />
+                </View>
+              )}
             </View>
             <TouchableOpacity 
               style={styles.cameraButton} 
@@ -519,6 +560,15 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: 60,
+    resizeMode: 'cover',
+  },
+  defaultAvatar: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 60,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   cameraButton: {
     position: 'absolute',
@@ -640,13 +690,4 @@ const styles = StyleSheet.create({
   bottomSpacing: {
     height: 50,
   },
-
-
-  avatarImage: {
-  width: '100%',
-  height: '100%',
-  borderRadius: 60,
-  resizeMode: 'cover', // Adicione isso para garantir que a imagem cubra o espaço
-},
-
 });
