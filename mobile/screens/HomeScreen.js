@@ -287,7 +287,7 @@ export default function HomeScreen() {
         <View style={styles.chartCard}>
           <Text style={styles.chartTitle}>
             Requisições de materiais{'\n'}
-            <Text style={styles.chartTitleHighlight}>últimos 6 meses</Text>
+            <Text style={styles.chartTitleHighlight}>nos últimos meses</Text>
           </Text>
           
         {loadingRequisicoes ? (
@@ -404,188 +404,244 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     paddingTop: 10
   },
+  loadingScreen: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF'
+  },
   greeting: {
-    fontSize: 27,
-    fontFamily: 'Poppins-Medium',
-    color: '#000',
-    paddingHorizontal: 20,
-    marginBottom: 25,
-    lineHeight: 38,
-    paddingTop: 20
+    fontSize: 28,
+    fontFamily: 'Poppins-Bold',
+    color: '#1F2937',
+    marginHorizontal: 20,
+    marginBottom: 24,
+    lineHeight: 36
   },
   calendarCard: {
-    backgroundColor: '#374151',
-    borderRadius: 24,
-    padding: 24,
+    backgroundColor: '#1F2937',
     marginHorizontal: 20,
-    marginBottom: 20
+    marginBottom: 20,
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
   },
   calendarHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 24
+    marginBottom: 20
   },
   calendarTitle: {
-    color: '#FFFFFF',
     fontSize: 20,
-    fontFamily: 'Poppins-medium'
+    fontFamily: 'Poppins-SemiBold',
+    color: '#FFFFFF',
+    marginBottom: 4
   },
   calendarDate: {
-    color: '#9CA3AF',
     fontSize: 14,
-    fontFamily: 'Poppins-Regular'
+    fontFamily: 'Poppins-Regular',
+    color: '#9CA3AF',
   },
   weekContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 5
+    alignItems: 'center'
   },
   dayContainer: {
     alignItems: 'center',
     paddingVertical: 12,
     paddingHorizontal: 8,
-    borderRadius: 16,
-    minWidth: 42
+    borderRadius: 12,
+    minWidth: 40
   },
   todayContainer: {
     backgroundColor: '#6366F1'
   },
   dayNumber: {
-    color: '#FFFFFF',
     fontSize: 16,
     fontFamily: 'Poppins-Medium',
+    color: '#FFFFFF',
     marginBottom: 4
   },
   todayNumber: {
     color: '#FFFFFF'
   },
   dayName: {
-    color: '#9CA3AF',
     fontSize: 12,
-    fontFamily: 'Poppins-Regular'
+    fontFamily: 'Poppins-Regular',
+    color: '#9CA3AF',
+    textTransform: 'lowercase'
   },
   todayName: {
     color: '#FFFFFF'
   },
   chartCard: {
-    backgroundColor: '#0A0A0D',
-    borderRadius: 24,
-    padding: 24,
+    backgroundColor: '#1F2937',
     marginHorizontal: 20,
-    marginBottom: 20
+    marginBottom: 20,
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  chartTitleContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 24
   },
   chartTitle: {
+    fontSize: 18,
+    fontFamily: 'Poppins-SemiBold',
     color: '#FFFFFF',
-    fontSize: 20,
-    fontFamily: 'Poppins-Medium',
-    marginBottom: 30,
-    lineHeight: 24
+    lineHeight: 24,
+    flex: 1
   },
   chartTitleHighlight: {
-    color: '#6366F1',
-    fontFamily: 'Poppins-SemiBold'
+    fontSize: 16,
+    fontFamily: 'Poppins-Regular',
+    color: '#9CA3AF'
+  },
+  refreshButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: 'rgba(99, 102, 241, 0.1)'
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    paddingVertical: 40
+  },
+  loadingText: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Regular',
+    color: '#9CA3AF',
+    marginTop: 12
   },
   chartContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
     alignItems: 'flex-end',
-    height: 140,
+    height: 160,
+    marginBottom: 20,
     paddingHorizontal: 10
   },
   chartBar: {
     alignItems: 'center',
-    flex: 1
+    flex: 1,
+    marginHorizontal: 4
+  },
+  barLabel: {
+    fontSize: 12,
+    fontFamily: 'Poppins-Medium',
+    color: '#FFFFFF',
+    marginBottom: 8,
+    textAlign: 'center'
   },
   barBackground: {
-    width: 32,
-    backgroundColor: 'transparent',
-    borderRadius: 6,
-    marginBottom: 12,
-    height: '100%',
-    justifyContent: 'flex-end'
+    width: '100%',
+    maxWidth: 32,
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    marginBottom: 12
   },
   barTotal: {
     width: '100%',
     backgroundColor: '#4B5563',
-    borderRadius: 6,
-    position: 'absolute',
-    bottom: 0
+    borderRadius: 4,
+    minHeight: 4
   },
   barAtendidas: {
     width: '100%',
     backgroundColor: '#6366F1',
-    borderRadius: 6,
+    borderRadius: 4,
     position: 'absolute',
-    bottom: 0
-  },
-  barLabel: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontFamily: 'Poppins-SemiBold',
-    marginBottom: 4
+    bottom: 0,
+    minHeight: 2
   },
   barMonth: {
-    color: '#6B7280',
-    fontSize: 12,
-    fontFamily: 'Poppins-Regular'
-  },
-  loadingContainer: {
-    height: 140,
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  loadingText: {
-    color: '#FFFFFF',
-    marginTop: 10,
-    fontFamily: 'Poppins-Regular'
-  },
-  emptyText: {
-    color: '#6B7280',
+    fontSize: 11,
+    fontFamily: 'Poppins-Regular',
+    color: '#9CA3AF',
     textAlign: 'center',
-    height: 140,
-    textAlignVertical: 'center',
-    fontFamily: 'Poppins-Regular'
+    textTransform: 'capitalize'
   },
   legendContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 20
+    marginBottom: 16,
+    gap: 20
   },
   legendItem: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: 10
+    alignItems: 'center'
   },
   legendColor: {
     width: 12,
     height: 12,
-    borderRadius: 4,
-    marginRight: 6
+    borderRadius: 2,
+    marginRight: 8
   },
   legendText: {
-    color: '#9CA3AF',
     fontSize: 12,
-    fontFamily: 'Poppins-Regular'
+    fontFamily: 'Poppins-Regular',
+    color: '#9CA3AF'
   },
   summaryContainer: {
-    marginTop: 20,
-    paddingHorizontal: 10
+    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 8
   },
   summaryText: {
+    fontSize: 13,
+    fontFamily: 'Poppins-Medium',
+    color: '#FFFFFF',
+    marginBottom: 4
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    paddingVertical: 40
+  },
+  emptyText: {
+    fontSize: 16,
+    fontFamily: 'Poppins-Medium',
     color: '#9CA3AF',
-    fontSize: 14,
-    fontFamily: 'Poppins-Regular',
-    textAlign: 'center',
+    marginTop: 16,
     marginBottom: 8
   },
+  emptySubtext: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Regular',
+    color: '#6B7280',
+    textAlign: 'center',
+    lineHeight: 20
+  },
   todoCard: {
-    backgroundColor: '#000000',
-    borderRadius: 24,
-    padding: 24,
+    backgroundColor: '#1F2937',
     marginHorizontal: 20,
-    marginBottom: 30,
-    minHeight: 120
+    marginBottom: 20,
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
   },
   todoHeader: {
     flexDirection: 'row',
@@ -605,33 +661,57 @@ const styles = StyleSheet.create({
     marginRight: 12
   },
   todoTitle: {
-    color: '#FFFFFF',
     fontSize: 18,
-    fontFamily: 'Poppins-SemiBold'
+    fontFamily: 'Poppins-SemiBold',
+    color: '#FFFFFF'
   },
   addButton: {
+    width: 36,
+    height: 36,
     backgroundColor: '#FFFFFF',
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    borderRadius: 18,
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  emptyTodoContainer: {
+    alignItems: 'center',
+    paddingVertical: 32
   },
   emptyTodoText: {
-    color: '#6B7280',
+    fontSize: 16,
+    fontFamily: 'Poppins-Medium',
+    color: '#9CA3AF',
+    marginTop: 16,
+    marginBottom: 8,
+    textAlign: 'center'
+  },
+  emptyTodoSubtext: {
     fontSize: 14,
     fontFamily: 'Poppins-Regular',
+    color: '#6B7280',
+    textAlign: 'center',
     lineHeight: 20
   },
   todoList: {
-    flex: 1
+    maxHeight: 300
   },
   todoItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#1F2937'
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)'
   },
   todoContent: {
     flexDirection: 'row',
@@ -639,84 +719,103 @@ const styles = StyleSheet.create({
     flex: 1
   },
   todoCheckbox: {
-    width: 20,
-    height: 20,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#6366F1',
-    borderRadius: 4,
+    borderColor: '#4B5563',
     marginRight: 12,
     justifyContent: 'center',
     alignItems: 'center'
   },
+  todoCheckboxCompleted: {
+    backgroundColor: 'rgba(99, 102, 241, 0.2)',
+    borderColor: '#6366F1'
+  },
   todoText: {
-    color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 15,
     fontFamily: 'Poppins-Regular',
-    flex: 1
+    color: '#FFFFFF',
+    flex: 1,
+    lineHeight: 22
   },
   todoTextCompleted: {
-    textDecorationLine: 'line-through',
-    color: '#6B7280'
+    color: '#9CA3AF',
+    textDecorationLine: 'line-through'
   },
   deleteButton: {
     padding: 8,
-    marginLeft: 10
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 107, 107, 0.1)'
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
+    paddingHorizontal: 20
   },
   modalContent: {
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
-    padding: 20,
-    width: '90%',
-    maxWidth: 400
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 10,
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontFamily: 'Poppins-SemiBold',
-    marginBottom: 15,
+    color: '#1F2937',
+    marginBottom: 20,
     textAlign: 'center'
   },
   modalInput: {
     borderWidth: 1,
     borderColor: '#E5E7EB',
-    borderRadius: 10,
-    padding: 15,
+    borderRadius: 12,
+    padding: 16,
     fontSize: 16,
     fontFamily: 'Poppins-Regular',
-    minHeight: 80,
+    color: '#1F2937',
+    backgroundColor: '#F9FAFB',
     textAlignVertical: 'top',
-    marginBottom: 20
+    minHeight: 80,
+    marginBottom: 24
   },
   modalButtons: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 10
+    gap: 12
   },
   modalButtonCancel: {
     flex: 1,
     backgroundColor: '#F3F4F6',
-    borderRadius: 10,
-    padding: 15,
+    borderRadius: 12,
+    paddingVertical: 16,
     alignItems: 'center'
+  },
+  modalButtonTextCancel: {
+    fontSize: 16,
+    fontFamily: 'Poppins-Medium',
+    color: '#6B7280'
   },
   modalButtonAdd: {
     flex: 1,
     backgroundColor: '#6366F1',
-    borderRadius: 10,
-    padding: 15,
+    borderRadius: 12,
+    paddingVertical: 16,
     alignItems: 'center'
   },
-  modalButtonTextCancel: {
-    color: '#6B7280',
-    fontFamily: 'Poppins-SemiBold'
-  },
   modalButtonTextAdd: {
-    color: '#FFFFFF',
-    fontFamily: 'Poppins-SemiBold'
+    fontSize: 16,
+    fontFamily: 'Poppins-Medium',
+    color: '#FFFFFF'
   }
 });
