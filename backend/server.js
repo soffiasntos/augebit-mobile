@@ -790,21 +790,3 @@ app.get('/requisicoes/estatisticas-alt', (req, res) => {
   });
 });
 
-// Rota para dados mock (caso não tenha dados reais ainda)
-app.get('/requisicoes/estatisticas-mock', (req, res) => {
-  console.log('Retornando dados mock de requisições...');
-  
-  const mockData = [
-    { mes: '2024-12', total: 0, atendidas: 0, pendentes: 0, atrasadas: 0 },
-    { mes: '2025-01', total: 0, atendidas: 0, pendentes: 0, atrasadas: 0 },
-    { mes: '2025-02', total: 0, atendidas: 0, pendentes: 0, atrasadas: 0 },
-    { mes: '2025-03', total: 13, atendidas: 9, pendentes: 3, atrasadas: 1 },
-    { mes: '2025-04', total: 4, atendidas: 2, pendentes: 1, atrasadas: 1 },
-    { mes: '2025-05', total: 8, atendidas: 5, pendentes: 2, atrasadas: 1 }
-  ];
-  
-  res.json({
-    success: true,
-    estatisticas: mockData
-  });
-});
