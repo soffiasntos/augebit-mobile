@@ -23,13 +23,23 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-app.use(express.json());
+// Aumentar limite do JSON para comportar imagens base64
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Middleware para log de requests
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.originalUrl}`);
   if (req.body && Object.keys(req.body).length > 0) {
-    console.log('Body:', JSON.stringify(req.body, null, 2));
+    // Log especial para uploads de foto (não mostrar base64 completo)
+    if (req.body.fotoPerfil) {
+      console.log('Body:', {
+        ...req.body,
+        fotoPerfil: req.body.fotoPerfil ? `${req.body.fotoPerfil.substring(0, 50)}... (${req.body.fotoPerfil.length} chars)` : null
+      });
+    } else {
+      console.log('Body:', JSON.stringify(req.body, null, 2));
+    }
   }
   next();
 });
@@ -55,6 +65,40 @@ pool.getConnection((err, connection) => {
     console.log('4. Tabela "funcionarios" existe?');
   } else {
     console.log('Conexão com banco de dados estabelecida!');
+    
+    // Verificar se a coluna fotoPerfil existe, se não existir, criar
+    const checkColumnQuery = `
+      SELECT COLUMN_NAME 
+      FROM INFORMATION_SCHEMA.COLUMNS 
+      WHERE TABLE_SCHEMA = 'estoque' 
+      AND TABLE_NAME = 'funcionarios' 
+      AND COLUMN_NAME = 'fotoPerfil'
+    `;
+    
+    connection.query(checkColumnQuery, (err, results) => {
+      if (err) {
+        console.error('Erro ao verificar coluna fotoPerfil:', err);
+      } else if (results.length === 0) {
+        console.log('Coluna fotoPerfil não existe. Criando...');
+        
+        const addColumnQuery = `
+          ALTER TABLE funcionarios 
+          ADD COLUMN fotoPerfil LONGTEXT NULL,
+          ADD COLUMN FotoPerfil LONGTEXT NULL
+        `;
+        
+        connection.query(addColumnQuery, (err) => {
+          if (err) {
+            console.error('Erro ao criar coluna fotoPerfil:', err);
+          } else {
+            console.log('Coluna fotoPerfil criada com sucesso!');
+          }
+        });
+      } else {
+        console.log('Coluna fotoPerfil já existe no banco de dados.');
+      }
+    });
+    
     connection.release();
   }
 });
@@ -128,7 +172,7 @@ app.get('/funcionarios', (req, res) => {
     SELECT 
       id, nome, Nome, email, NomeCompleto, nomeCompleto, senha, 
       Telefone, telefone, Cargo, cargo, Departamento, departamento,
-      DataAdmissao, dataAdmissao
+      DataAdmissao, dataAdmissao, fotoPerfil, FotoPerfil
     FROM funcionarios
   `;
   
@@ -161,7 +205,7 @@ app.get('/funcionario/:id', (req, res) => {
     SELECT 
       id, nome, Nome, NomeCompleto, nomeCompleto, email, senha,
       Telefone, telefone, Cargo, cargo, Departamento, departamento,
-      DataAdmissao, dataAdmissao, created_at, updated_at
+      DataAdmissao, dataAdmissao, fotoPerfil, FotoPerfil, created_at, updated_at
     FROM funcionarios 
     WHERE id = ?
   `;
@@ -185,7 +229,11 @@ app.get('/funcionario/:id', (req, res) => {
     }
     
     const funcionario = results[0];
-    console.log('Funcionário encontrado:', funcionario);
+    console.log('Funcionário encontrado (sem foto):', {
+      ...funcionario,
+      fotoPerfil: funcionario.fotoPerfil ? 'Foto presente' : 'Sem foto',
+      FotoPerfil: funcionario.FotoPerfil ? 'Foto presente' : 'Sem foto'
+    });
     
     // Normalizar dados para compatibilidade
     const funcionarioNormalizado = {
@@ -204,6 +252,8 @@ app.get('/funcionario/:id', (req, res) => {
       Departamento: funcionario.Departamento || funcionario.departamento || '',
       dataAdmissao: funcionario.DataAdmissao || funcionario.dataAdmissao || '',
       DataAdmissao: funcionario.DataAdmissao || funcionario.dataAdmissao || '',
+      fotoPerfil: funcionario.fotoPerfil || funcionario.FotoPerfil || null,
+      FotoPerfil: funcionario.fotoPerfil || funcionario.FotoPerfil || null,
       created_at: funcionario.created_at,
       updated_at: funcionario.updated_at
     };
@@ -215,10 +265,94 @@ app.get('/funcionario/:id', (req, res) => {
   });
 });
 
+// NOVA ROTA: Atualizar foto de perfil
+app.put('/funcionario/:id/foto', (req, res) => {
+  const { id } = req.params;
+  const { fotoPerfil } = req.body;
+  
+  console.log(`=== ATUALIZANDO FOTO DO FUNCIONÁRIO ID: ${id} ===`);
+  console.log('Tamanho da imagem recebida:', fotoPerfil ? fotoPerfil.length : 0);
+  
+  if (!fotoPerfil) {
+    return res.status(400).json({
+      success: false,
+      message: 'Foto de perfil é obrigatória'
+    });
+  }
+  
+  // Verificar se é uma imagem base64 válida
+  if (!fotoPerfil.startsWith('data:image/')) {
+    return res.status(400).json({
+      success: false,
+      message: 'Formato de imagem inválido. Use base64.'
+    });
+  }
+  
+  // Verificar se o funcionário existe
+  const checkQuery = 'SELECT id FROM funcionarios WHERE id = ?';
+  
+  req.dbConnection.query(checkQuery, [id], (err, results) => {
+    if (err) {
+      console.error('Erro ao verificar funcionário:', err);
+      return res.status(500).json({
+        success: false,
+        error: 'Erro ao verificar funcionário',
+        details: err.message
+      });
+    }
+    
+    if (results.length === 0) {
+      console.log(`Funcionário com ID ${id} não encontrado`);
+      return res.status(404).json({
+        success: false,
+        message: 'Funcionário não encontrado'
+      });
+    }
+    
+    console.log('Funcionário existe, atualizando foto...');
+    
+    // Atualizar foto no banco
+    const updateQuery = `
+      UPDATE funcionarios 
+      SET fotoPerfil = ?, FotoPerfil = ?, updated_at = NOW() 
+      WHERE id = ?
+    `;
+    
+    req.dbConnection.query(updateQuery, [fotoPerfil, fotoPerfil, id], (err, results) => {
+      if (err) {
+        console.error('Erro ao atualizar foto:', err);
+        return res.status(500).json({
+          success: false,
+          error: 'Erro ao atualizar foto de perfil',
+          details: err.message
+        });
+      }
+      
+      console.log('Resultado da atualização da foto:', results);
+      
+      if (results.affectedRows === 0) {
+        console.log('Nenhuma linha afetada na atualização da foto');
+        return res.status(404).json({
+          success: false,
+          message: 'Funcionário não encontrado ou foto não foi atualizada'
+        });
+      }
+      
+      console.log('Foto de perfil atualizada com sucesso!');
+      
+      res.json({
+        success: true,
+        message: 'Foto de perfil atualizada com sucesso',
+        funcionarioId: id
+      });
+    });
+  });
+});
+
 // Rota para atualizar funcionário
 app.put('/funcionario/:id', (req, res) => {
   const { id } = req.params;
-  const { nome, nomeCompleto, email, senha, telefone, cargo, departamento } = req.body;
+  const { nome, nomeCompleto, email, senha, telefone, cargo, departamento, fotoPerfil } = req.body;
   
   console.log(`=== ATUALIZANDO FUNCIONÁRIO ID: ${id} ===`);
   console.log('Dados recebidos:', {
@@ -228,7 +362,8 @@ app.put('/funcionario/:id', (req, res) => {
     senha: senha ? '***' : 'não informada',
     telefone,
     cargo,
-    departamento
+    departamento,
+    fotoPerfil: fotoPerfil ? `Foto presente (${fotoPerfil.length} chars)` : 'não informada'
   });
   
   // Verificar se o funcionário existe
@@ -309,6 +444,13 @@ app.put('/funcionario/:id', (req, res) => {
       values.push(departamento.trim(), departamento.trim());
     }
     
+    // ADICIONADO: Suporte para atualizar foto de perfil na rota geral
+    if (fotoPerfil !== undefined && fotoPerfil.trim() !== '') {
+      console.log('Atualizando foto de perfil na rota geral');
+      fieldsToUpdate.push('fotoPerfil = ?', 'FotoPerfil = ?');
+      values.push(fotoPerfil.trim(), fotoPerfil.trim());
+    }
+    
     if (fieldsToUpdate.length === 0) {
       console.log('Nenhum campo para atualizar');
       return res.status(400).json({
@@ -322,7 +464,12 @@ app.put('/funcionario/:id', (req, res) => {
     const updateQuery = `UPDATE funcionarios SET ${fieldsToUpdate.join(', ')} WHERE id = ?`;
     
     console.log('Query de update:', updateQuery);
-    console.log('Valores:', values.map((v, i) => i === values.length - 1 ? v : (typeof v === 'string' && v.includes('@') ? v : (v.length > 10 ? '***' : v))));
+    console.log('Valores (sem foto):', values.map((v, i) => {
+      if (i === values.length - 1) return v; // ID
+      if (typeof v === 'string' && v.startsWith('data:image/')) return 'FOTO_BASE64';
+      if (typeof v === 'string' && v.includes('@')) return v;
+      return v.length > 10 ? '***' : v;
+    }));
     
     req.dbConnection.query(updateQuery, values, (err, results) => {
       if (err) {
@@ -351,7 +498,7 @@ app.put('/funcionario/:id', (req, res) => {
         SELECT 
           id, nome, Nome, NomeCompleto, nomeCompleto, email, 
           Telefone, telefone, Cargo, cargo, Departamento, departamento,
-          DataAdmissao, dataAdmissao, created_at, updated_at
+          DataAdmissao, dataAdmissao, fotoPerfil, FotoPerfil, created_at, updated_at
         FROM funcionarios 
         WHERE id = ?
       `;
@@ -381,11 +528,17 @@ app.put('/funcionario/:id', (req, res) => {
           Departamento: funcionario.Departamento || funcionario.departamento || '',
           dataAdmissao: funcionario.DataAdmissao || funcionario.dataAdmissao || '',
           DataAdmissao: funcionario.DataAdmissao || funcionario.dataAdmissao || '',
+          fotoPerfil: funcionario.fotoPerfil || funcionario.FotoPerfil || null,
+          FotoPerfil: funcionario.fotoPerfil || funcionario.FotoPerfil || null,
           created_at: funcionario.created_at,
           updated_at: funcionario.updated_at
         };
         
-        console.log('Dados atualizados retornados:', funcionarioNormalizado);
+        console.log('Dados atualizados retornados (sem foto):', {
+          ...funcionarioNormalizado,
+          fotoPerfil: funcionarioNormalizado.fotoPerfil ? 'Foto presente' : null,
+          FotoPerfil: funcionarioNormalizado.FotoPerfil ? 'Foto presente' : null
+        });
         
         res.json({
           success: true,
@@ -507,6 +660,7 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`• GET    /funcionarios - Lista todos os funcionários`);
   console.log(`• GET    /funcionario/:id - Busca funcionário por ID`);
   console.log(`• PUT    /funcionario/:id - Atualiza funcionário`);
+  console.log(`• PUT    /funcionario/:id/foto - Atualiza foto de perfil`);
   console.log(`• POST   /login - Login de usuário`);
   console.log(`• POST   /check-email - Verifica se email existe`);
   console.log('=================================');
