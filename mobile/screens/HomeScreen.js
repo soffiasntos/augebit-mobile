@@ -279,10 +279,7 @@ const [loadingMateriais, setLoadingMateriais] = useState(true);
           </View>
         </View>
 
-      {/* Chart Card - Requisições de Materiais */}
-<View style={styles.chartCard}>
- 
-</View>
+   
         {/* Todo Card */}
         <View style={styles.todoCard}>
           <View style={styles.todoHeader}>
