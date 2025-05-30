@@ -644,6 +644,39 @@ app.use((req, res) => {
   });
 });
 
+
+router.get('/requisicoes/estatisticas-detalhadas', async (req, res) => {
+  try {
+    const query = `
+      SELECT 
+        DATE_FORMAT(data_requisicao, '%Y-%m') as mes,
+        COUNT(*) as total_requisicoes,
+        SUM(CASE WHEN status = 'atendida' THEN 1 ELSE 0 END) as atendidas,
+        SUM(CASE WHEN status = 'pendente' THEN 1 ELSE 0 END) as pendentes,
+        SUM(CASE WHEN status = 'atrasada' THEN 1 ELSE 0 END) as atrasadas
+      FROM requisicoes 
+      WHERE data_requisicao >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+      GROUP BY DATE_FORMAT(data_requisicao, '%Y-%m')
+      ORDER BY mes ASC
+    `;
+
+    const resultados = await
+    const estatisticas = resultados.map(row => ({
+      mes: row.mes,
+      total_requisicoes: parseInt(row.total_requisicoes)
+    }));
+
+    res.json(estatisticas);
+
+  } catch (error) {
+    console.error('Erro ao buscar estatísticas:', error);
+    res.status(500).json({ 
+      error: 'Erro interno do servidor',
+      message: 'Não foi possível carregar as estatísticas de requisições'
+    });
+  }
+});
+
 // Iniciar servidor
 app.listen(PORT, '0.0.0.0', () => {
   console.log('=================================');

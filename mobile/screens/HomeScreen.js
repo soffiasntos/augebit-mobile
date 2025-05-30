@@ -16,6 +16,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Layout from '../components/Layout';
 import { useFonts } from 'expo-font';
 
+// Adicione esta URL do seu backend
+const API_BASE_URL = 'http://seu-backend.com/api'; // Substitua pela URL do seu backend
+
 export default function HomeScreen() {
   const [nomeUsuario, setNomeUsuario] = useState('Nicole Ayla');
   const [dataAtual, setDataAtual] = useState({
@@ -29,9 +32,9 @@ export default function HomeScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [novaTarefa, setNovaTarefa] = useState('');
 
-
- const [requisicoesMateriais, setRequisicoesMateriais] = useState([]);
-const [loadingMateriais, setLoadingMateriais] = useState(true);
+  // Estados para o dashboard de requisições
+  const [estatisticasRequisicoes, setEstatisticasRequisicoes] = useState([]);
+  const [loadingEstatisticas, setLoadingEstatisticas] = useState(true);
 
   const [fontsLoaded] = useFonts({
     'Poppins-Regular': require('../assets/fonts/PoppinsRegular.ttf'),
@@ -41,14 +44,55 @@ const [loadingMateriais, setLoadingMateriais] = useState(true);
   });
 
   useEffect(() => {
-
-}, []);
-
-  useEffect(() => {
     carregarNome();
     atualizarData();
     carregarTodos();
+    carregarEstatisticasRequisicoes();
   }, []);
+
+  // Função para carregar estatísticas de requisições do backend
+  const carregarEstatisticasRequisicoes = async () => {
+    try {
+      setLoadingEstatisticas(true);
+      
+      // Fazer requisição para o backend
+      const response = await fetch(`${API_BASE_URL}/requisicoes/estatisticas`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          // Adicione headers de autenticação se necessário
+          // 'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const dados = await response.json();
+        setEstatisticasRequisicoes(dados);
+      } else {
+        console.error('Erro ao carregar estatísticas:', response.status);
+        // Dados de exemplo em caso de erro
+        setEstatisticasRequisicoes([
+          { mes: '2025-01', total_requisicoes: 1 },
+          { mes: '2025-02', total_requisicoes: 6 },
+          { mes: '2025-03', total_requisicoes: 0 },
+          { mes: '2025-04', total_requisicoes: 12 },
+          { mes: '2025-05', total_requisicoes: 2 }
+        ]);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar estatísticas:', error);
+      // Dados de exemplo em caso de erro
+      setEstatisticasRequisicoes([
+        { mes: '2025-01', total_requisicoes: 1 },
+        { mes: '2025-02', total_requisicoes: 6 },
+        { mes: '2025-03', total_requisicoes: 0 },
+        { mes: '2025-04', total_requisicoes: 12 },
+        { mes: '2025-05', total_requisicoes: 2 }
+      ]);
+    } finally {
+      setLoadingEstatisticas(false);
+    }
+  };
 
   const carregarNome = async () => {
     try {
@@ -119,8 +163,6 @@ const [loadingMateriais, setLoadingMateriais] = useState(true);
     }
   };
 
-  
-
   const salvarTodos = async (novosTodos) => {
     try {
       await AsyncStorage.setItem('todos', JSON.stringify(novosTodos));
@@ -184,20 +226,14 @@ const [loadingMateriais, setLoadingMateriais] = useState(true);
   const calcularAlturasGrafico = () => {
     if (!estatisticasRequisicoes.length) return [];
     
-    const maxTotal = Math.max(...estatisticasRequisicoes.map(item => item.total), 1);
+    const maxTotal = Math.max(...estatisticasRequisicoes.map(item => item.total_requisicoes), 1);
     
     return estatisticasRequisicoes.map(item => ({
       mes: formatarMes(item.mes),
-      total: item.total,
-      atendidas: item.atendidas,
-      pendentes: item.pendentes,
-      atrasadas: item.atrasadas,
-      alturaTotal: Math.max(Math.round((item.total / maxTotal) * 120), item.total > 0 ? 8 : 0),
-      alturaAtendidas: Math.max(Math.round((item.atendidas / maxTotal) * 120), item.atendidas > 0 ? 4 : 0)
+      total: item.total_requisicoes,
+      alturaTotal: Math.max(Math.round((item.total_requisicoes / maxTotal) * 120), item.total_requisicoes > 0 ? 8 : 0)
     }));
   };
-
-
 
   const renderTodoItem = ({ item }) => (
     <View style={styles.todoItem}>
@@ -237,6 +273,9 @@ const [loadingMateriais, setLoadingMateriais] = useState(true);
       </View>
     );
   }
+
+  const dadosGrafico = calcularAlturasGrafico();
+  const totalRequisicoes = estatisticasRequisicoes.reduce((acc, item) => acc + item.total_requisicoes, 0);
 
   return (
     <Layout>
@@ -279,7 +318,50 @@ const [loadingMateriais, setLoadingMateriais] = useState(true);
           </View>
         </View>
 
-   
+        {/* Dashboard de Requisições */}
+        <View style={styles.chartCard}>
+          <Text style={styles.chartTitle}>
+            Requisições de <Text style={styles.chartTitleHighlight}>Materiais</Text>
+          </Text>
+          
+          {loadingEstatisticas ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#6366F1" />
+              <Text style={styles.loadingText}>Carregando estatísticas...</Text>
+            </View>
+          ) : dadosGrafico.length === 0 ? (
+            <Text style={styles.emptyText}>Nenhum dado disponível</Text>
+          ) : (
+            <>
+              <View style={styles.chartContainer}>
+                {dadosGrafico.map((item, index) => (
+                  <View key={index} style={styles.chartBar}>
+                    <View style={styles.barBackground}>
+                      <View 
+                        style={[
+                          styles.barTotal, 
+                          { height: item.alturaTotal }
+                        ]} 
+                      />
+                    </View>
+                    <Text style={styles.barLabel}>{item.total}</Text>
+                    <Text style={styles.barMonth}>{item.mes}</Text>
+                  </View>
+                ))}
+              </View>
+              
+              <View style={styles.summaryContainer}>
+                <Text style={styles.summaryText}>
+                  Total de requisições nos últimos meses
+                </Text>
+                <Text style={[styles.summaryText, { color: '#6366F1', fontFamily: 'Poppins-SemiBold' }]}>
+                  {totalRequisicoes} requisições
+                </Text>
+              </View>
+            </>
+          )}
+        </View>
+
         {/* Todo Card */}
         <View style={styles.todoCard}>
           <View style={styles.todoHeader}>
@@ -364,12 +446,17 @@ const [loadingMateriais, setLoadingMateriais] = useState(true);
   );
 }
 
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
     paddingTop: 10
+  },
+  loadingScreen: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF'
   },
   greeting: {
     fontSize: 27,
@@ -396,7 +483,7 @@ const styles = StyleSheet.create({
   calendarTitle: {
     color: '#FFFFFF',
     fontSize: 20,
-    fontFamily: 'Poppins-medium'
+    fontFamily: 'Poppins-Medium'
   },
   calendarDate: {
     color: '#9CA3AF',
@@ -474,13 +561,6 @@ const styles = StyleSheet.create({
   },
   barTotal: {
     width: '100%',
-    backgroundColor: '#4B5563',
-    borderRadius: 6,
-    position: 'absolute',
-    bottom: 0
-  },
-  barAtendidas: {
-    width: '100%',
     backgroundColor: '#6366F1',
     borderRadius: 6,
     position: 'absolute',
@@ -512,27 +592,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     height: 140,
     textAlignVertical: 'center',
-    fontFamily: 'Poppins-Regular'
-  },
-  legendContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 20
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: 10
-  },
-  legendColor: {
-    width: 12,
-    height: 12,
-    borderRadius: 4,
-    marginRight: 6
-  },
-  legendText: {
-    color: '#9CA3AF',
-    fontSize: 12,
     fontFamily: 'Poppins-Regular'
   },
   summaryContainer: {
@@ -584,11 +643,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center'
   },
+  emptyTodoContainer: {
+    alignItems: 'center',
+    paddingVertical: 20
+  },
   emptyTodoText: {
     color: '#6B7280',
     fontSize: 14,
     fontFamily: 'Poppins-Regular',
-    lineHeight: 20
+    textAlign: 'center',
+    marginTop: 12,
+    marginBottom: 4
+  },
+  emptyTodoSubtext: {
+    color: '#4B5563',
+    fontSize: 12,
+    fontFamily: 'Poppins-Regular',
+    textAlign: 'center'
   },
   todoList: {
     flex: 1
@@ -614,6 +685,9 @@ const styles = StyleSheet.create({
     marginRight: 12,
     justifyContent: 'center',
     alignItems: 'center'
+  },
+  todoCheckboxCompleted: {
+    backgroundColor: '#6366F1'
   },
   todoText: {
     color: '#FFFFFF',
@@ -685,43 +759,5 @@ const styles = StyleSheet.create({
   modalButtonTextAdd: {
     color: '#FFFFFF',
     fontFamily: 'Poppins-SemiBold'
-  },
-  // Adicione/atualize estilos
-chartContainer: {
-  flexDirection: 'row',
-  justifyContent: 'space-around',
-  alignItems: 'flex-end',
-  height: 140,
-  paddingHorizontal: 10
-},
-chartBar: {
-  alignItems: 'center',
-  flex: 1
-},
-barBackground: {
-  width: 32,
-  backgroundColor: 'transparent',
-  borderRadius: 6,
-  marginBottom: 12,
-  height: '100%',
-  justifyContent: 'flex-end'
-},
-barTotal: {
-  width: '100%',
-  backgroundColor: '#6366F1',
-  borderRadius: 6,
-  position: 'absolute',
-  bottom: 0
-},
-barLabel: {
-  color: '#FFFFFF',
-  fontSize: 14,
-  fontFamily: 'Poppins-SemiBold',
-  marginBottom: 4
-},
-barMonth: {
-  color: '#6B7280',
-  fontSize: 12,
-  fontFamily: 'Poppins-Regular'
-},
+  }
 });
