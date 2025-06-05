@@ -695,19 +695,212 @@ app.post('/check-email', (req, res) => {
   });
 });
 
-// Rota não encontrada
-app.use((req, res) => {
-  console.log(`ROTA NÃO ENCONTRADA: ${req.method} ${req.originalUrl}`);
-  res.status(404).json({ 
-    success: false, 
-    message: 'Rota não encontrada',
-    method: req.method,
-    url: req.originalUrl
+
+
+app.get('/produto', (req, res) => {
+  console.log('Buscando todos os produtos...');
+  
+  const query = `
+    SELECT 
+      id, nome, descricao, categoria, preco, quantidade, 
+      minimo, fornecedor, status, created_at, updated_at
+    FROM produto
+    WHERE status = 'ativo'
+    ORDER BY nome ASC
+  `;
+  
+  req.dbConnection.query(query, (err, results) => {
+    if (err) {
+      console.error('Erro ao consultar produtos:', err);
+      return res.status(500).json({
+        success: false,
+        error: 'Erro ao consultar produtos',
+        details: err.message
+      });
+    }
+    
+    console.log(`Encontrados ${results.length} produtos`);
+    
+    // Formatar preços para exibição
+    const produtosFormatados = results.map(produto => ({
+      ...produto,
+      preco: parseFloat(produto.preco),
+      precoFormatado: `R$ ${parseFloat(produto.preco).toFixed(2).replace('.', ',')}`,
+      estoqueStatus: produto.quantidade <= produto.minimo ? 'baixo' : 'normal',
+      created_at: produto.created_at,
+      updated_at: produto.updated_at
+    }));
+    
+    res.json({
+      success: true,
+      produto: produtosFormatados, // Mudança aqui: usando 'produto' em vez de 'produtos'
+      total: produtosFormatados.length
+    });
   });
 });
 
+// Rota para buscar produto por ID
+app.get('/produto/:id', (req, res) => {
+  const { id } = req.params;
+  
+  console.log(`Buscando produto com ID: ${id}`);
+  
+  const query = `
+    SELECT 
+      id, nome, descricao, categoria, preco, quantidade, 
+      minimo, fornecedor, status, created_at, updated_at
+    FROM produto
+    WHERE id = ? AND status = 'ativo'
+  `;
+  
+  req.dbConnection.query(query, [id], (err, results) => {
+    if (err) {
+      console.error('Erro ao buscar produto:', err);
+      return res.status(500).json({
+        success: false,
+        error: 'Erro ao consultar produto',
+        details: err.message
+      });
+    }
+    
+    if (results.length === 0) {
+      console.log(`Produto com ID ${id} não encontrado`);
+      return res.status(404).json({
+        success: false,
+        message: 'Produto não encontrado'
+      });
+    }
+    
+    const produto = results[0];
+    const produtoFormatado = {
+      ...produto,
+      preco: parseFloat(produto.preco),
+      precoFormatado: `R$ ${parseFloat(produto.preco).toFixed(2).replace('.', ',')}`,
+      estoqueStatus: produto.quantidade <= produto.minimo ? 'baixo' : 'normal'
+    };
+    
+    console.log('Produto encontrado:', produtoFormatado.nome);
+    
+    res.json({
+      success: true,
+      produto: produtoFormatado
+    });
+  });
+});
 
+// Rota para buscar produtos por categoria
+app.get('/produto/categoria/:categoria', (req, res) => {
+  const { categoria } = req.params;
+  
+  console.log(`Buscando produtos da categoria: ${categoria}`);
+  
+  const query = `
+    SELECT 
+      id, nome, descricao, categoria, preco, quantidade, 
+      minimo, fornecedor, status, created_at, updated_at
+    FROM produto
+    WHERE categoria = ? AND status = 'ativo'
+    ORDER BY nome ASC
+  `;
+  
+  req.dbConnection.query(query, [categoria], (err, results) => {
+    if (err) {
+      console.error('Erro ao buscar produtos por categoria:', err);
+      return res.status(500).json({
+        success: false,
+        error: 'Erro ao consultar produtos',
+        details: err.message
+      });
+    }
+    
+    const produtosFormatados = results.map(produto => ({
+      ...produto,
+      preco: parseFloat(produto.preco),
+      precoFormatado: `R$ ${parseFloat(produto.preco).toFixed(2).replace('.', ',')}`,
+      estoqueStatus: produto.quantidade <= produto.minimo ? 'baixo' : 'normal'
+    }));
+    
+    console.log(`Encontrados ${results.length} produtos na categoria ${categoria}`);
+    
+    res.json({
+      success: true,
+      produto: produtosFormatados, // Usando 'produto' para consistência
+      categoria: categoria,
+      total: produtosFormatados.length
+    });
+  });
+});
 
+// Rota para buscar categorias disponíveis (corrigida)
+app.get('/categorias', (req, res) => {
+  console.log('Buscando categorias disponíveis...');
+  
+  const query = `
+    SELECT DISTINCT categoria, COUNT(*) as total_produto
+    FROM produto
+    WHERE status = 'ativo' AND categoria IS NOT NULL AND categoria != ''
+    GROUP BY categoria
+    ORDER BY categoria ASC
+  `;
+  
+  req.dbConnection.query(query, (err, results) => {
+    if (err) {
+      console.error('Erro ao buscar categorias:', err);
+      return res.status(500).json({
+        success: false,
+        error: 'Erro ao consultar categorias',
+        details: err.message
+      });
+    }
+    
+    console.log(`Encontradas ${results.length} categorias`);
+    
+    res.json({
+      success: true,
+      categorias: results
+    });
+  });
+});
+
+// Rota adicional para buscar produtos com estoque baixo
+app.get('/produto/estoque/baixo', (req, res) => {
+  console.log('Buscando produtos com estoque baixo...');
+  
+  const query = `
+    SELECT 
+      id, nome, descricao, categoria, preco, quantidade, 
+      minimo, fornecedor, status, created_at, updated_at
+    FROM produto
+    WHERE quantidade <= minimo AND status = 'ativo'
+    ORDER BY quantidade ASC
+  `;
+  
+  req.dbConnection.query(query, (err, results) => {
+    if (err) {
+      console.error('Erro ao buscar produtos com estoque baixo:', err);
+      return res.status(500).json({
+        success: false,
+        error: 'Erro ao consultar produtos',
+        details: err.message
+      });
+    }
+    
+    const produtosFormatados = results.map(produto => ({
+      ...produto,
+      preco: parseFloat(produto.preco),
+      precoFormatado: `R$ ${parseFloat(produto.preco).toFixed(2).replace('.', ',')}`,
+      estoqueStatus: 'baixo'
+    }));
+    
+    console.log(`Encontrados ${results.length} produtos com estoque baixo`);
+    
+    res.json({
+      success: true,
+      produto: produtosFormatados,
+      total: produtosFormatados.length
+    });
+  });
+});
 
 // Iniciar servidor
 app.listen(PORT, '0.0.0.0', () => {
@@ -716,7 +909,8 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log('=================================');
   console.log(`Porta: ${PORT}`);
   console.log(`IP Local: http://localhost:${PORT}`);
-  console.log(`IP Rede: http://10.136.23.237:${PORT}`);
+  console.log(`IP Rede: http://10.136.23.106
+:${PORT}`);
   console.log('');
   console.log('ROTAS DISPONÍVEIS:');
   console.log(`• GET    / - Status da API`);
@@ -745,3 +939,13 @@ process.on('SIGINT', () => {
   });
 });
 
+// Rota não encontrada
+app.use((req, res) => {
+  console.log(`ROTA NÃO ENCONTRADA: ${req.method} ${req.originalUrl}`);
+  res.status(404).json({ 
+    success: false, 
+    message: 'Rota não encontrada',
+    method: req.method,
+    url: req.originalUrl
+  });
+});

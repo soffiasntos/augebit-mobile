@@ -33,7 +33,7 @@ export default function Perfil() {
   });
   const [editedData, setEditedData] = useState({ ...userData });
 
-  const API_URL = 'http://10.136.23.237:3000'; // Ajuste conforme seu IP
+  const API_URL = 'http://10.136.23.106:3000'; // Ajuste conforme seu IP
 
   useEffect(() => {
     carregarDadosUsuario();
