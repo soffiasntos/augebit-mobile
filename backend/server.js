@@ -98,6 +98,68 @@ pool.getConnection((err, connection) => {
         console.log('Coluna fotoPerfil já existe no banco de dados.');
       }
     });
+
+    // Verificar/criar tabela de requisições para estatísticas
+    const createRequisitionsTable = `
+      CREATE TABLE IF NOT EXISTS requisicoes (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        funcionario_id INT,
+        status VARCHAR(50) DEFAULT 'pendente',
+        data_requisicao DATE DEFAULT (CURRENT_DATE),
+        descricao TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (funcionario_id) REFERENCES funcionarios(id)
+      )
+    `;
+    
+    connection.query(createRequisitionsTable, (err) => {
+      if (err) {
+        console.error('Erro ao criar tabela requisicoes:', err);
+      } else {
+        console.log('Tabela requisicoes verificada/criada com sucesso!');
+        
+        // Inserir dados de exemplo se a tabela estiver vazia
+        const checkDataQuery = 'SELECT COUNT(*) as total FROM requisicoes';
+        connection.query(checkDataQuery, (err, results) => {
+          if (!err && results[0].total === 0) {
+            console.log('Inserindo dados de exemplo para requisições...');
+            const insertSampleData = `
+              INSERT INTO requisicoes (funcionario_id, status, data_requisicao, descricao) VALUES
+              (1, 'aprovada', '2025-01-15', 'Requisição de material de escritório'),
+              (1, 'pendente', '2025-02-10', 'Solicitação de equipamentos'),
+              (1, 'aprovada', '2025-02-15', 'Material de limpeza'),
+              (1, 'rejeitada', '2025-02-20', 'Equipamento especial'),
+              (1, 'aprovada', '2025-02-25', 'Papelaria'),
+              (1, 'pendente', '2025-02-28', 'Material técnico'),
+              (1, 'aprovada', '2025-04-05', 'Requisição Q1'),
+              (1, 'aprovada', '2025-04-10', 'Requisição Q2'),
+              (1, 'pendente', '2025-04-15', 'Requisição Q3'),
+              (1, 'aprovada', '2025-04-20', 'Requisição Q4'),
+              (1, 'rejeitada', '2025-04-25', 'Requisição Q5'),
+              (1, 'aprovada', '2025-04-28', 'Requisição Q6'),
+              (1, 'aprovada', '2025-04-30', 'Requisição Q7'),
+              (1, 'pendente', '2025-05-02', 'Requisição Maio 1'),
+              (1, 'aprovada', '2025-05-10', 'Requisição Maio 2'),
+              (1, 'aprovada', '2025-05-15', 'Requisição Maio 3'),
+              (1, 'pendente', '2025-05-20', 'Requisição Maio 4'),
+              (1, 'rejeitada', '2025-05-25', 'Requisição Maio 5'),
+              (1, 'aprovada', '2025-05-28', 'Requisição Maio 6'),
+              (1, 'pendente', '2025-06-01', 'Requisição Junho 1'),
+              (1, 'aprovada', '2025-06-03', 'Requisição Junho 2')
+            `;
+            
+            connection.query(insertSampleData, (err) => {
+              if (err) {
+                console.error('Erro ao inserir dados de exemplo:', err);
+              } else {
+                console.log('Dados de exemplo inseridos com sucesso!');
+              }
+            });
+          }
+        });
+      }
+    });
     
     connection.release();
   }
@@ -645,37 +707,7 @@ app.use((req, res) => {
 });
 
 
-router.get('/requisicoes/estatisticas-detalhadas', async (req, res) => {
-  try {
-    const query = `
-      SELECT 
-        DATE_FORMAT(data_requisicao, '%Y-%m') as mes,
-        COUNT(*) as total_requisicoes,
-        SUM(CASE WHEN status = 'atendida' THEN 1 ELSE 0 END) as atendidas,
-        SUM(CASE WHEN status = 'pendente' THEN 1 ELSE 0 END) as pendentes,
-        SUM(CASE WHEN status = 'atrasada' THEN 1 ELSE 0 END) as atrasadas
-      FROM requisicoes 
-      WHERE data_requisicao >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
-      GROUP BY DATE_FORMAT(data_requisicao, '%Y-%m')
-      ORDER BY mes ASC
-    `;
 
-    const resultados = await
-    const estatisticas = resultados.map(row => ({
-      mes: row.mes,
-      total_requisicoes: parseInt(row.total_requisicoes)
-    }));
-
-    res.json(estatisticas);
-
-  } catch (error) {
-    console.error('Erro ao buscar estatísticas:', error);
-    res.status(500).json({ 
-      error: 'Erro interno do servidor',
-      message: 'Não foi possível carregar as estatísticas de requisições'
-    });
-  }
-});
 
 // Iniciar servidor
 app.listen(PORT, '0.0.0.0', () => {
@@ -713,6 +745,3 @@ process.on('SIGINT', () => {
   });
 });
 
-
-  
-  

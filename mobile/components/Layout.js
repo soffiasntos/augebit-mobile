@@ -159,7 +159,7 @@ export default function Layout({ children, showHeader = true }) {
                 title="Controle de produtos" 
                 onPress={() => {
                   closeMenu();
-                  navigation.navigate('Produtos');
+                  navigation.navigate('ProdutosScreen');
                 }}
               />
             </View>
