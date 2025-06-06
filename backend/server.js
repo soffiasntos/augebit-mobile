@@ -1,4 +1,5 @@
 const express = require('express');
+const requisicoesRouter = require('./routes/requisicoes');
 const mysql = require('mysql');
 const cors = require('cors');
 
@@ -44,6 +45,7 @@ app.use((req, res, next) => {
   next();
 });
 
+
 // Pool de conexões
 const pool = mysql.createPool({
   ...dbConfig,
@@ -52,6 +54,8 @@ const pool = mysql.createPool({
   timeout: 60000,
   reconnect: true
 });
+
+
 
 // Teste de conexão na inicialização
 pool.getConnection((err, connection) => {
@@ -98,72 +102,10 @@ pool.getConnection((err, connection) => {
         console.log('Coluna fotoPerfil já existe no banco de dados.');
       }
     });
-
-    // Verificar/criar tabela de requisições para estatísticas
-    const createRequisitionsTable = `
-      CREATE TABLE IF NOT EXISTS requisicoes (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        funcionario_id INT,
-        status VARCHAR(50) DEFAULT 'pendente',
-        data_requisicao DATE DEFAULT (CURRENT_DATE),
-        descricao TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        FOREIGN KEY (funcionario_id) REFERENCES funcionarios(id)
-      )
-    `;
-    
-    connection.query(createRequisitionsTable, (err) => {
-      if (err) {
-        console.error('Erro ao criar tabela requisicoes:', err);
-      } else {
-        console.log('Tabela requisicoes verificada/criada com sucesso!');
-        
-        // Inserir dados de exemplo se a tabela estiver vazia
-        const checkDataQuery = 'SELECT COUNT(*) as total FROM requisicoes';
-        connection.query(checkDataQuery, (err, results) => {
-          if (!err && results[0].total === 0) {
-            console.log('Inserindo dados de exemplo para requisições...');
-            const insertSampleData = `
-              INSERT INTO requisicoes (funcionario_id, status, data_requisicao, descricao) VALUES
-              (1, 'aprovada', '2025-01-15', 'Requisição de material de escritório'),
-              (1, 'pendente', '2025-02-10', 'Solicitação de equipamentos'),
-              (1, 'aprovada', '2025-02-15', 'Material de limpeza'),
-              (1, 'rejeitada', '2025-02-20', 'Equipamento especial'),
-              (1, 'aprovada', '2025-02-25', 'Papelaria'),
-              (1, 'pendente', '2025-02-28', 'Material técnico'),
-              (1, 'aprovada', '2025-04-05', 'Requisição Q1'),
-              (1, 'aprovada', '2025-04-10', 'Requisição Q2'),
-              (1, 'pendente', '2025-04-15', 'Requisição Q3'),
-              (1, 'aprovada', '2025-04-20', 'Requisição Q4'),
-              (1, 'rejeitada', '2025-04-25', 'Requisição Q5'),
-              (1, 'aprovada', '2025-04-28', 'Requisição Q6'),
-              (1, 'aprovada', '2025-04-30', 'Requisição Q7'),
-              (1, 'pendente', '2025-05-02', 'Requisição Maio 1'),
-              (1, 'aprovada', '2025-05-10', 'Requisição Maio 2'),
-              (1, 'aprovada', '2025-05-15', 'Requisição Maio 3'),
-              (1, 'pendente', '2025-05-20', 'Requisição Maio 4'),
-              (1, 'rejeitada', '2025-05-25', 'Requisição Maio 5'),
-              (1, 'aprovada', '2025-05-28', 'Requisição Maio 6'),
-              (1, 'pendente', '2025-06-01', 'Requisição Junho 1'),
-              (1, 'aprovada', '2025-06-03', 'Requisição Junho 2')
-            `;
-            
-            connection.query(insertSampleData, (err) => {
-              if (err) {
-                console.error('Erro ao inserir dados de exemplo:', err);
-              } else {
-                console.log('Dados de exemplo inseridos com sucesso!');
-              }
-            });
-          }
-        });
       }
     });
     
-    connection.release();
-  }
-});
+    
 
 // Middleware de conexão
 app.use((req, res, next) => {
@@ -326,6 +268,35 @@ app.get('/funcionario/:id', (req, res) => {
     });
   });
 });
+
+
+app.get('/check-tables', (req, res) => {
+  const query = `
+    SELECT COUNT(*) as exists_flag
+    FROM information_schema.tables 
+    WHERE table_schema = 'estoque' 
+    AND table_name = 'requisicoes'
+  `;
+  
+  req.db.query(query, (err, results) => {
+    if (err) {
+      return res.status(500).json({ 
+        success: false,
+        error: 'Erro ao verificar tabelas',
+        details: err.message 
+      });
+    }
+    
+    const exists = results[0].exists_flag > 0;
+    res.json({ 
+      success: true,
+      tables: {
+        requisicoes: exists
+      }
+    });
+  });
+});
+
 
 // NOVA ROTA: Atualizar foto de perfil
 app.put('/funcionario/:id/foto', (req, res) => {

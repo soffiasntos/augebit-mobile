@@ -15,9 +15,10 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Layout from '../components/Layout';
 import { useFonts } from 'expo-font';
+import RequestChart from '../components/RequestChart';
 
-// Adicione esta URL do seu backend
-const API_BASE_URL = 'http://seu-backend.com/api'; // Substitua pela URL do seu backend
+
+const API_URL = 'http://10.136.23.106:3000';
 
 export default function HomeScreen() {
   const [nomeUsuario, setNomeUsuario] = useState('Nicole Ayla');
@@ -32,10 +33,7 @@ export default function HomeScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [novaTarefa, setNovaTarefa] = useState('');
 
-  // Estados para o dashboard de requisições
-  const [estatisticasRequisicoes, setEstatisticasRequisicoes] = useState([]);
-  const [loadingEstatisticas, setLoadingEstatisticas] = useState(true);
-
+  
   const [fontsLoaded] = useFonts({
     'Poppins-Regular': require('../assets/fonts/PoppinsRegular.ttf'),
     'Poppins-Medium': require('../assets/fonts/Poppins-Medium.ttf'),
@@ -47,53 +45,11 @@ export default function HomeScreen() {
     carregarNome();
     atualizarData();
     carregarTodos();
-    carregarEstatisticasRequisicoes();
+   
   }, []);
 
-  // Função para carregar estatísticas de requisições do backend
-  const carregarEstatisticasRequisicoes = async () => {
-    try {
-      setLoadingEstatisticas(true);
-      
-      // Fazer requisição para o backend
-      const response = await fetch(`${API_BASE_URL}/requisicoes/estatisticas`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          // Adicione headers de autenticação se necessário
-          // 'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const dados = await response.json();
-        setEstatisticasRequisicoes(dados);
-      } else {
-        console.error('Erro ao carregar estatísticas:', response.status);
-        // Dados de exemplo em caso de erro
-        setEstatisticasRequisicoes([
-          { mes: '2025-01', total_requisicoes: 1 },
-          { mes: '2025-02', total_requisicoes: 6 },
-          { mes: '2025-03', total_requisicoes: 0 },
-          { mes: '2025-04', total_requisicoes: 12 },
-          { mes: '2025-05', total_requisicoes: 2 }
-        ]);
-      }
-    } catch (error) {
-      console.error('Erro ao carregar estatísticas:', error);
-      // Dados de exemplo em caso de erro
-      setEstatisticasRequisicoes([
-        { mes: '2025-01', total_requisicoes: 1 },
-        { mes: '2025-02', total_requisicoes: 6 },
-        { mes: '2025-03', total_requisicoes: 0 },
-        { mes: '2025-04', total_requisicoes: 12 },
-        { mes: '2025-05', total_requisicoes: 2 }
-      ]);
-    } finally {
-      setLoadingEstatisticas(false);
-    }
-  };
-
+  
+  
   const carregarNome = async () => {
     try {
       const userData = await AsyncStorage.getItem('usuarioLogado');
@@ -223,17 +179,7 @@ export default function HomeScreen() {
     return meses[parseInt(mes) - 1] || mesAno;
   };
 
-  const calcularAlturasGrafico = () => {
-    if (!estatisticasRequisicoes.length) return [];
-    
-    const maxTotal = Math.max(...estatisticasRequisicoes.map(item => item.total_requisicoes), 1);
-    
-    return estatisticasRequisicoes.map(item => ({
-      mes: formatarMes(item.mes),
-      total: item.total_requisicoes,
-      alturaTotal: Math.max(Math.round((item.total_requisicoes / maxTotal) * 120), item.total_requisicoes > 0 ? 8 : 0)
-    }));
-  };
+  
 
   const renderTodoItem = ({ item }) => (
     <View style={styles.todoItem}>
@@ -274,9 +220,7 @@ export default function HomeScreen() {
     );
   }
 
-  const dadosGrafico = calcularAlturasGrafico();
-  const totalRequisicoes = estatisticasRequisicoes.reduce((acc, item) => acc + item.total_requisicoes, 0);
-
+ 
   return (
     <Layout>
       <ScrollView showsVerticalScrollIndicator={false} style={styles.container}>
@@ -317,51 +261,8 @@ export default function HomeScreen() {
             ))}
           </View>
         </View>
-
-        {/* Dashboard de Requisições */}
-        <View style={styles.chartCard}>
-          <Text style={styles.chartTitle}>
-            Requisições de <Text style={styles.chartTitleHighlight}>Materiais</Text>
-          </Text>
-          
-          {loadingEstatisticas ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#6366F1" />
-              <Text style={styles.loadingText}>Carregando estatísticas...</Text>
-            </View>
-          ) : dadosGrafico.length === 0 ? (
-            <Text style={styles.emptyText}>Nenhum dado disponível</Text>
-          ) : (
-            <>
-              <View style={styles.chartContainer}>
-                {dadosGrafico.map((item, index) => (
-                  <View key={index} style={styles.chartBar}>
-                    <View style={styles.barBackground}>
-                      <View 
-                        style={[
-                          styles.barTotal, 
-                          { height: item.alturaTotal }
-                        ]} 
-                      />
-                    </View>
-                    <Text style={styles.barLabel}>{item.total}</Text>
-                    <Text style={styles.barMonth}>{item.mes}</Text>
-                  </View>
-                ))}
-              </View>
-              
-              <View style={styles.summaryContainer}>
-                <Text style={styles.summaryText}>
-                  Total de requisições nos últimos meses
-                </Text>
-                <Text style={[styles.summaryText, { color: '#6366F1', fontFamily: 'Poppins-SemiBold' }]}>
-                  {totalRequisicoes} requisições
-                </Text>
-              </View>
-            </>
-          )}
-        </View>
-
+<RequestChart />
+        
         {/* Todo Card */}
         <View style={styles.todoCard}>
           <View style={styles.todoHeader}>

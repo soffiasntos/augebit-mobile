@@ -16,6 +16,8 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import Layout from '../components/Layout';
+import { Linking } from 'react-native';
+
 
 const { width, height } = Dimensions.get('window');
 
@@ -275,12 +277,24 @@ const ProdutosScreen = ({ navigation }) => {
                   </View>
                 </View>
 
-                {produtoSelecionado.fornecedor && (
-                  <View style={styles.detailSection}>
-                    <Text style={styles.detailLabel}>Fornecedor</Text>
-                    <Text style={styles.detailValue}>{produtoSelecionado.fornecedor}</Text>
-                  </View>  
-                )}
+               {produtoSelecionado.fornecedor && (
+               <TouchableOpacity
+              onPress={() => {
+            const email = produtoSelecionado.fornecedor;
+            const mailto = `mailto:${email}`;
+            Linking.openURL(mailto).catch(err =>
+            Alert.alert('Erro', 'Não foi possível abrir o app de e-mail.')
+      );
+    }}
+    style={styles.detailSection}
+  >
+    <Text style={styles.detailLabel}>Fornecedor</Text>
+    <Text style={[styles.detailValue, { color: '#1e1e2e', textDecorationLine: 'underline' }]}>
+      {produtoSelecionado.fornecedor}
+    </Text>
+  </TouchableOpacity>
+)}
+
 
                 <View style={[
                   styles.statusCard,
