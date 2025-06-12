@@ -265,6 +265,7 @@ export default function Layout({ children, showHeader = true }) {
                 title="Chat" 
                 onPress={() => {
                   closeMenu();
+                  navigation.navigate('Chat');
                 }}
               />
               <MenuItem 
@@ -279,14 +280,7 @@ export default function Layout({ children, showHeader = true }) {
             
             <View style={styles.menuFooter}>
               <View style={styles.separator} />
-              <MenuItem 
-                icon="settings-outline" 
-                title="Configurações" 
-                showBorder={false}
-                onPress={() => {
-                  closeMenu();
-                }}
-              />
+              
               <MenuItem 
                 icon="exit-outline" 
                 title="Sair" 

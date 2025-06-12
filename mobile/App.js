@@ -12,6 +12,7 @@ import LoadingScreen from './screens/LoadingScreen';
 import HomeScreen from './screens/HomeScreen';
 import Perfil from './screens/Perfil';
 import ProdutosScreen from './screens/ProdutosScreen';
+import SupplyAIChatScreen from './screens/Chat';
 
 
 
@@ -28,6 +29,7 @@ export default function App() {
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="Perfil" component={Perfil} />
         <Stack.Screen name="ProdutosScreen" component={ProdutosScreen} />
+        <Stack.Screen name="Chat" component={SupplyAIChatScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

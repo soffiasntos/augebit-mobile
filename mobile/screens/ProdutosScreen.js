@@ -148,6 +148,22 @@ const ProdutosScreen = ({ navigation }) => {
     setModalVisible(true);
   };
 
+  // Função para abrir email do fornecedor
+  const abrirEmailFornecedor = () => {
+    const email = 'fornecedor.augebit@gmail.com';
+    const subject = produtoSelecionado ? `Consulta sobre produto: ${produtoSelecionado.nome}` : 'Consulta sobre produto';
+    const body = produtoSelecionado ? 
+      `Olá,\n\nGostaria de fazer uma consulta sobre o produto:\n\nNome: ${produtoSelecionado.nome}\nID: #${produtoSelecionado.id}\nCategoria: ${produtoSelecionado.categoria || 'Não informada'}\n\nAguardo retorno.\n\nObrigado.` : 
+      'Olá,\n\nGostaria de fazer uma consulta sobre um produto.\n\nAguardo retorno.\n\nObrigado.';
+    
+    const mailto = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    
+    Linking.openURL(mailto).catch(err => {
+      console.error('Erro ao abrir email:', err);
+      Alert.alert('Erro', 'Não foi possível abrir o aplicativo de e-mail.');
+    });
+  };
+
   // Renderizar item da categoria
   const renderCategoria = ({ item }) => (
     <TouchableOpacity
@@ -279,24 +295,23 @@ const ProdutosScreen = ({ navigation }) => {
                   </View>
                 </View>
 
-               {produtoSelecionado.fornecedor && (
-               <TouchableOpacity
-              onPress={() => {
-            const email = produtoSelecionado.fornecedor;
-            const mailto = `mailto:${email}`;
-            Linking.openURL(mailto).catch(err =>
-            Alert.alert('Erro', 'Não foi possível abrir o app de e-mail.')
-      );
-    }}
-    style={styles.detailSection}
-  >
-    <Text style={styles.detailLabel}>Fornecedor</Text>
-    <Text style={[styles.detailValue, { color: '#1e1e2e', textDecorationLine: 'underline' }]}>
-      {produtoSelecionado.fornecedor}
-    </Text>
-  </TouchableOpacity>
-)}
-
+                {produtoSelecionado.fornecedor && (
+                  <TouchableOpacity
+                    onPress={abrirEmailFornecedor}
+                    style={styles.detailSection}
+                  >
+                    <Text style={styles.detailLabel}>Fornecedor</Text>
+                    <View style={styles.fornecedorContainer}>
+                      <Text style={[styles.detailValue, styles.fornecedorText]}>
+                        {produtoSelecionado.fornecedor}
+                      </Text>
+                      <Icon name="email" size={16} color="#6366f1" style={styles.emailIcon} />
+                    </View>
+                    <Text style={styles.fornecedorHint}>
+                      Toque para enviar email
+                    </Text>
+                  </TouchableOpacity>
+                )}
 
                 <View style={[
                   styles.statusCard,
@@ -714,6 +729,24 @@ const styles = StyleSheet.create({
   },
   stockAlert: {
     color: '#ef4444',
+  },
+  // Estilos do fornecedor
+  fornecedorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  fornecedorText: {
+    color: '#6366f1',
+    textDecorationLine: 'underline',
+  },
+  emailIcon: {
+    marginLeft: 8,
+  },
+  fornecedorHint: {
+    fontSize: 12,
+    color: '#94a3b8',
+    fontStyle: 'italic',
   },
   statusCard: {
     borderRadius: 16,
