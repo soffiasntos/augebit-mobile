@@ -1,7 +1,26 @@
+require('dotenv').config();
 const express = require('express');
 const requisicoesRouter = require('./routes/requisicoes');
 const mysql = require('mysql');
 const cors = require('cors');
+const os = require('os');
+
+
+function getLocalIP() {
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]) {
+      if (iface.family === 'IPv4' && !iface.internal) {
+        return iface.address;
+      }
+    }
+  }
+  return '127.0.0.1'; // fallback
+}
+
+const LOCAL_IP = getLocalIP();
+const HOST = '0.0.0.0'; // escuta em todas as interfaces
+const PORT = process.env.PORT || 3000;
 
 // Configuração do banco de dados
 const dbConfig = {
@@ -13,9 +32,8 @@ const dbConfig = {
   timeout: 60000,
   reconnect: true
 };
-
 const app = express();
-const PORT = 3000;
+
 
 // Middleware
 app.use(cors({
@@ -874,14 +892,13 @@ app.get('/produto/estoque/baixo', (req, res) => {
 });
 
 // Iniciar servidor
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, HOST, () => {
   console.log('=================================');
   console.log('SERVIDOR INICIADO COM SUCESSO!');
   console.log('=================================');
   console.log(`Porta: ${PORT}`);
   console.log(`IP Local: http://localhost:${PORT}`);
-  console.log(`IP Rede: http://10.136.23.106
-:${PORT}`);
+  console.log(`IP Rede: http://${LOCAL_IP}:${PORT}`);
   console.log('');
   console.log('ROTAS DISPONÍVEIS:');
   console.log(`• GET    / - Status da API`);

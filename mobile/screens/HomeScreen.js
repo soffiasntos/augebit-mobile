@@ -15,12 +15,12 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Layout from '../components/Layout';
 import { useFonts } from 'expo-font';
-import RequestChart from '../components/RequestChart';
 
 
-const API_URL = 'http://10.136.23.106:3000';
 
-export default function HomeScreen() {
+
+
+export default function SuppliesDashboard() {
   const [nomeUsuario, setNomeUsuario] = useState('Nicole Ayla');
   const [dataAtual, setDataAtual] = useState({
     dia: 1,
@@ -32,8 +32,21 @@ export default function HomeScreen() {
   const [todos, setTodos] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [novaTarefa, setNovaTarefa] = useState('');
-
   
+  // Estados específicos para o dashboard de suprimentos
+  const [metricas, setMetricas] = useState({
+    pedidosPendentes: 12,
+    estoqueMinimo: 5,
+    fornecedoresAtivos: 8,
+    valorMensal: 45800
+  });
+
+  const [alertasSuprimentos, setAlertasSuprimentos] = useState([
+    { id: 1, item: 'Papel A4', nivel: 'baixo', categoria: 'Material de Escritório' },
+    { id: 2, item: 'Tinta para Impressora HP', nivel: 'crítico', categoria: 'Suprimentos TI' },
+    { id: 3, item: 'Cabos HDMI', nivel: 'baixo', categoria: 'Equipamentos' }
+  ]);
+
   const [fontsLoaded] = useFonts({
     'Poppins-Regular': require('../assets/fonts/PoppinsRegular.ttf'),
     'Poppins-Medium': require('../assets/fonts/Poppins-Medium.ttf'),
@@ -45,11 +58,8 @@ export default function HomeScreen() {
     carregarNome();
     atualizarData();
     carregarTodos();
-   
   }, []);
 
-  
-  
   const carregarNome = async () => {
     try {
       const userData = await AsyncStorage.getItem('usuarioLogado');
@@ -172,15 +182,6 @@ export default function HomeScreen() {
     );
   };
 
-  const formatarMes = (mesAno) => {
-    if (!mesAno) return '';
-    const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-    const [ano, mes] = mesAno.split('-');
-    return meses[parseInt(mes) - 1] || mesAno;
-  };
-
-  
-
   const renderTodoItem = ({ item }) => (
     <View style={styles.todoItem}>
       <TouchableOpacity 
@@ -212,6 +213,32 @@ export default function HomeScreen() {
     </View>
   );
 
+  const renderAlertaItem = ({ item }) => (
+    <View style={styles.alertaItem}>
+      <View style={styles.alertaContent}>
+        <View style={[
+          styles.alertaIndicator,
+          item.nivel === 'crítico' ? styles.alertaCritico : styles.alertaBaixo
+        ]} />
+        <View style={styles.alertaInfo}>
+          <Text style={styles.alertaItemNome}>{item.item}</Text>
+          <Text style={styles.alertaCategoria}>{item.categoria}</Text>
+        </View>
+      </View>
+      <View style={[
+        styles.alertaNivel,
+        item.nivel === 'crítico' ? styles.nivelCritico : styles.nivelBaixo
+      ]}>
+        <Text style={[
+          styles.alertaNivelText,
+          item.nivel === 'crítico' ? styles.nivelCriticoText : styles.nivelBaixoText
+        ]}>
+          {item.nivel.toUpperCase()}
+        </Text>
+      </View>
+    </View>
+  );
+
   if (!fontsLoaded) {
     return (
       <View style={styles.loadingScreen}>
@@ -220,17 +247,20 @@ export default function HomeScreen() {
     );
   }
 
- 
   return (
     <Layout>
       <ScrollView showsVerticalScrollIndicator={false} style={styles.container}>
-        {/* Greeting */}
-        <Text style={styles.greeting}>Olá,{'\n'}{nomeUsuario}</Text>
+        {/* Header com saudação personalizada para suprimentos */}
+        <View style={styles.headerContainer}>
+          <Text style={styles.greeting}>Olá,{'\n'}{nomeUsuario}</Text>
+          <Text style={styles.departamento}>Departamento de Suprimentos</Text>
+          <Text style={styles.empresa}>TechDesign Solutions</Text>
+        </View>
 
-        {/* Calendar Card */}
+ {/* Calendar Card - mantendo funcionalidade original */}
         <View style={styles.calendarCard}>
           <View style={styles.calendarHeader}>
-            <Text style={styles.calendarTitle}>Hoje</Text>
+            <Text style={styles.calendarTitle}>Cronograma</Text>
             <Text style={styles.calendarDate}>
               {dataAtual.mes} {dataAtual.dia ? dataAtual.dia.toString().padStart(2, '0') : '01'}, {dataAtual.ano}
             </Text>
@@ -261,14 +291,46 @@ export default function HomeScreen() {
             ))}
           </View>
         </View>
-<RequestChart />
+
+        {/* Cards de Métricas */}
+        <View style={styles.metricsContainer}>
+          <View style={styles.metricRow}>
+            <View style={[styles.metricCard, styles.metricCardPrimary]}>
+              <Ionicons name="clipboard-outline" size={24} color="#6366F1" />
+              <Text style={styles.metricNumber}>{metricas.pedidosPendentes}</Text>
+              <Text style={styles.metricLabel}>Pedidos{'\n'}Pendentes</Text>
+            </View>
+            <View style={[styles.metricCard, styles.metricCardWarning]}>
+              <Ionicons name="warning-outline" size={24} color="#F59E0B" />
+              <Text style={styles.metricNumber}>{metricas.estoqueMinimo}</Text>
+              <Text style={styles.metricLabel}>Itens Estoque{'\n'}Mínimo</Text>
+            </View>
+          </View>
+          
+          <View style={styles.metricRow}>
+            <View style={[styles.metricCard, styles.metricCardSuccess]}>
+              <Ionicons name="people-outline" size={24} color="#10B981" />
+              <Text style={styles.metricNumber}>{metricas.fornecedoresAtivos}</Text>
+              <Text style={styles.metricLabel}>Fornecedores{'\n'}Ativos</Text>
+            </View>
+            <View style={[styles.metricCard, styles.metricCardInfo]}>
+              <Ionicons name="card-outline" size={24} color="#3B82F6" />
+              <Text style={styles.metricNumber}>R$ {(metricas.valorMensal / 1000).toFixed(0)}K</Text>
+              <Text style={styles.metricLabel}>Gasto{'\n'}Mensal</Text>
+            </View>
+          </View>
+        </View>
+
+       
+
         
-        {/* Todo Card */}
+
+        {/* Todo Card - mantendo funcionalidade original mas com tema de suprimentos */}
         <View style={styles.todoCard}>
           <View style={styles.todoHeader}>
             <View style={styles.todoTitleContainer}>
               <View style={styles.todoIndicator} />
-              <Text style={styles.todoTitle}>To do</Text>
+              <Text style={styles.todoTitle}>Tarefas de Suprimentos</Text>
             </View>
             <TouchableOpacity 
               style={styles.addButton}
@@ -282,7 +344,7 @@ export default function HomeScreen() {
             <View style={styles.emptyTodoContainer}>
               <Ionicons name="checkmark-circle-outline" size={48} color="#4B5563" />
               <Text style={styles.emptyTodoText}>
-                Nenhuma tarefa para fazer no momento
+                Nenhuma tarefa pendente no momento
               </Text>
               <Text style={styles.emptyTodoSubtext}>
                 Toque no + para adicionar uma nova tarefa
@@ -300,7 +362,7 @@ export default function HomeScreen() {
         </View>
       </ScrollView>
 
-      {/* Modal para adicionar tarefa */}
+      {/* Modal para adicionar tarefa - mantendo funcionalidade original */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -309,11 +371,11 @@ export default function HomeScreen() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Nova Tarefa</Text>
+            <Text style={styles.modalTitle}>Nova Tarefa de Suprimentos</Text>
             
             <TextInput
               style={styles.modalInput}
-              placeholder="Digite sua tarefa..."
+              placeholder="Ex: Solicitar cotação para papel A4..."
               placeholderTextColor="#888"
               value={novaTarefa}
               onChangeText={setNovaTarefa}
@@ -350,7 +412,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F8FAFC',
     paddingTop: 10
   },
   loadingScreen: {
@@ -359,14 +421,80 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFFFFF'
   },
+  headerContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    marginBottom: 25
+  },
   greeting: {
     fontSize: 27,
     fontFamily: 'Poppins-Medium',
-    color: '#000',
-    paddingHorizontal: 20,
-    marginBottom: 25,
+    color: '#1F2937',
     lineHeight: 38,
-    paddingTop: 20
+    marginBottom: 8
+  },
+  departamento: {
+    fontSize: 16,
+    fontFamily: 'Poppins-Medium',
+    color: '#6366F1',
+    marginBottom: 4
+  },
+  empresa: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Regular',
+    color: '#6B7280'
+  },
+  metricsContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 20
+  },
+  metricRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12
+  },
+  metricCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 20,
+    flex: 1,
+    marginHorizontal: 6,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3
+  },
+  metricCardPrimary: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#6366F1'
+  },
+  metricCardWarning: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#F59E0B'
+  },
+  metricCardSuccess: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#10B981'
+  },
+  metricCardInfo: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#3B82F6'
+  },
+  metricNumber: {
+    fontSize: 24,
+    fontFamily: 'Poppins-Bold',
+    color: '#1F2937',
+    marginTop: 8,
+    marginBottom: 4
+  },
+  metricLabel: {
+    fontSize: 12,
+    fontFamily: 'Poppins-Regular',
+    color: '#6B7280',
+    textAlign: 'center',
+    lineHeight: 16
   },
   calendarCard: {
     backgroundColor: '#374151',
@@ -423,88 +551,104 @@ const styles = StyleSheet.create({
   todayName: {
     color: '#FFFFFF'
   },
-  chartCard: {
-    backgroundColor: '#0A0A0D',
+  alertasCard: {
+    backgroundColor: '#FFFFFF',
     borderRadius: 24,
     padding: 24,
     marginHorizontal: 20,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3
+  },
+  alertasHeader: {
     marginBottom: 20
   },
-  chartTitle: {
-    color: '#FFFFFF',
-    fontSize: 20,
-    fontFamily: 'Poppins-Medium',
-    marginBottom: 30,
-    lineHeight: 24
-  },
-  chartTitleHighlight: {
-    color: '#6366F1',
-    fontFamily: 'Poppins-SemiBold'
-  },
-  chartContainer: {
+  alertasTitleContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'flex-end',
-    height: 140,
-    paddingHorizontal: 10
+    alignItems: 'center'
   },
-  chartBar: {
+  alertasTitle: {
+    color: '#1F2937',
+    fontSize: 18,
+    fontFamily: 'Poppins-SemiBold',
+    marginLeft: 12
+  },
+  emptyAlertasContainer: {
+    alignItems: 'center',
+    paddingVertical: 20
+  },
+  emptyAlertasText: {
+    color: '#6B7280',
+    fontSize: 14,
+    fontFamily: 'Poppins-Regular',
+    textAlign: 'center',
+    marginTop: 12
+  },
+  alertasList: {
+    flex: 1
+  },
+  alertaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6'
+  },
+  alertaContent: {
+    flexDirection: 'row',
     alignItems: 'center',
     flex: 1
   },
-  barBackground: {
-    width: 32,
-    backgroundColor: 'transparent',
-    borderRadius: 6,
-    marginBottom: 12,
-    height: '100%',
-    justifyContent: 'flex-end'
+  alertaIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 12
   },
-  barTotal: {
-    width: '100%',
-    backgroundColor: '#6366F1',
-    borderRadius: 6,
-    position: 'absolute',
-    bottom: 0
+  alertaCritico: {
+    backgroundColor: '#EF4444'
   },
-  barLabel: {
-    color: '#FFFFFF',
+  alertaBaixo: {
+    backgroundColor: '#F59E0B'
+  },
+  alertaInfo: {
+    flex: 1
+  },
+  alertaItemNome: {
+    color: '#1F2937',
     fontSize: 14,
-    fontFamily: 'Poppins-SemiBold',
-    marginBottom: 4
+    fontFamily: 'Poppins-Medium',
+    marginBottom: 2
   },
-  barMonth: {
+  alertaCategoria: {
     color: '#6B7280',
     fontSize: 12,
     fontFamily: 'Poppins-Regular'
   },
-  loadingContainer: {
-    height: 140,
-    justifyContent: 'center',
-    alignItems: 'center'
+  alertaNivel: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12
   },
-  loadingText: {
-    color: '#FFFFFF',
-    marginTop: 10,
-    fontFamily: 'Poppins-Regular'
+  nivelCritico: {
+    backgroundColor: '#FEE2E2'
   },
-  emptyText: {
-    color: '#6B7280',
-    textAlign: 'center',
-    height: 140,
-    textAlignVertical: 'center',
-    fontFamily: 'Poppins-Regular'
+  nivelBaixo: {
+    backgroundColor: '#FEF3C7'
   },
-  summaryContainer: {
-    marginTop: 20,
-    paddingHorizontal: 10
+  alertaNivelText: {
+    fontSize: 10,
+    fontFamily: 'Poppins-SemiBold'
   },
-  summaryText: {
-    color: '#9CA3AF',
-    fontSize: 14,
-    fontFamily: 'Poppins-Regular',
-    textAlign: 'center',
-    marginBottom: 8
+  nivelCriticoText: {
+    color: '#DC2626'
+  },
+  nivelBaixoText: {
+    color: '#D97706'
   },
   todoCard: {
     backgroundColor: '#000000',
@@ -621,7 +765,8 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: 'Poppins-SemiBold',
     marginBottom: 15,
-    textAlign: 'center'
+    textAlign: 'center',
+    color: '#1F2937'
   },
   modalInput: {
     borderWidth: 1,
@@ -632,7 +777,8 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Regular',
     minHeight: 80,
     textAlignVertical: 'top',
-    marginBottom: 20
+    marginBottom: 20,
+    color: '#1F2937'
   },
   modalButtons: {
     flexDirection: 'row',

@@ -17,6 +17,8 @@ import {
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import Layout from '../components/Layout';
 import { Linking } from 'react-native';
+import { API_URL } from '../components/config'; // caminho relativo ao seu projeto
+
 
 
 const { width, height } = Dimensions.get('window');
@@ -32,7 +34,7 @@ const ProdutosScreen = ({ navigation }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [produtoSelecionado, setProdutoSelecionado] = useState(null);
 
-  const API_URL = 'http://10.136.23.106:3000';
+  
 
   // Buscar produtos
   const buscarProdutos = async () => {
