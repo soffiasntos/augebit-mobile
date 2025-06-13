@@ -9,16 +9,16 @@ import {
   Alert,
   ScrollView,
   FlatList,
-  ActivityIndicator
+  ActivityIndicator,
+  Dimensions
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Layout from '../components/Layout';
 import { useFonts } from 'expo-font';
+import { LineChart, BarChart, PieChart, ProgressChart } from 'react-native-chart-kit';
 
-
-
-
+const screenWidth = Dimensions.get('window').width;
 
 export default function SuppliesDashboard() {
   const [nomeUsuario, setNomeUsuario] = useState('Nicole Ayla');
@@ -38,14 +38,46 @@ export default function SuppliesDashboard() {
     pedidosPendentes: 12,
     estoqueMinimo: 5,
     fornecedoresAtivos: 8,
-    valorMensal: 45800
+    valorMensal: 45800,
+    economiaGerada: 8500,
+    eficienciaProcessos: 87
   });
 
   const [alertasSuprimentos, setAlertasSuprimentos] = useState([
-    { id: 1, item: 'Papel A4', nivel: 'baixo', categoria: 'Material de Escritório' },
-    { id: 2, item: 'Tinta para Impressora HP', nivel: 'crítico', categoria: 'Suprimentos TI' },
-    { id: 3, item: 'Cabos HDMI', nivel: 'baixo', categoria: 'Equipamentos' }
+    { id: 1, item: 'Papel A4', nivel: 'baixo', categoria: 'Material de Escritório', quantidade: 15 },
+    { id: 2, item: 'Tinta para Impressora HP', nivel: 'crítico', categoria: 'Suprimentos TI', quantidade: 3 },
+    { id: 3, item: 'Cabos HDMI', nivel: 'baixo', categoria: 'Equipamentos', quantidade: 8 },
+    { id: 4, item: 'Grampeador', nivel: 'crítico', categoria: 'Material de Escritório', quantidade: 2 }
   ]);
+
+  // Dados para gráficos
+  const [gastosMensais] = useState({
+    labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'],
+    datasets: [{
+      data: [38500, 42300, 45800, 41200, 47600, 45800],
+      color: (opacity = 1) => `rgba(99, 102, 241, ${opacity})`,
+      strokeWidth: 3
+    }]
+  });
+
+  const [categoriaGastos] = useState([
+    { name: 'TI', population: 35, color: '#6366F1', legendFontColor: '#374151', legendFontSize: 12 },
+    { name: 'Escritório', population: 28, color: '#10B981', legendFontColor: '#374151', legendFontSize: 12 },
+    { name: 'Limpeza', population: 20, color: '#F59E0B', legendFontColor: '#374151', legendFontSize: 12 },
+    { name: 'Outros', population: 17, color: '#EF4444', legendFontColor: '#374151', legendFontSize: 12 }
+  ]);
+
+  const [fornecedoresPerformance] = useState({
+    labels: ['Fornec. A', 'Fornec. B', 'Fornec. C', 'Fornec. D'],
+    datasets: [{
+      data: [95, 87, 78, 92]
+    }]
+  });
+
+  const [progressoMetas] = useState({
+    labels: ['Economia', 'Qualidade', 'Prazo', 'Satisfação'],
+    data: [0.87, 0.94, 0.78, 0.91]
+  });
 
   const [fontsLoaded] = useFonts({
     'Poppins-Regular': require('../assets/fonts/PoppinsRegular.ttf'),
@@ -53,6 +85,21 @@ export default function SuppliesDashboard() {
     'Poppins-SemiBold': require('../assets/fonts/Poppins-SemiBold.ttf'),
     'Poppins-Bold': require('../assets/fonts/Poppins-Bold.ttf'),
   });
+
+  const chartConfig = {
+    backgroundColor: '#ffffff',
+    backgroundGradientFrom: '#ffffff',
+    backgroundGradientTo: '#ffffff',
+    decimalPlaces: 0,
+    color: (opacity = 1) => `rgba(99, 102, 241, ${opacity})`,
+    labelColor: (opacity = 1) => `rgba(55, 65, 81, ${opacity})`,
+    style: {
+      borderRadius: 16
+    },
+    propsForLabels: {
+      fontFamily: 'Poppins-Regular'
+    }
+  };
 
   useEffect(() => {
     carregarNome();
@@ -223,6 +270,7 @@ export default function SuppliesDashboard() {
         <View style={styles.alertaInfo}>
           <Text style={styles.alertaItemNome}>{item.item}</Text>
           <Text style={styles.alertaCategoria}>{item.categoria}</Text>
+          <Text style={styles.alertaQuantidade}>Qtd: {item.quantidade}</Text>
         </View>
       </View>
       <View style={[
@@ -257,7 +305,136 @@ export default function SuppliesDashboard() {
           <Text style={styles.empresa}>TechDesign Solutions</Text>
         </View>
 
- {/* Calendar Card - mantendo funcionalidade original */}
+        {/* Cards de Métricas Principais */}
+        <View style={styles.metricsContainer}>
+          <View style={styles.metricRow}>
+            <View style={[styles.metricCard, styles.metricCardPrimary]}>
+              <Ionicons name="clipboard-outline" size={24} color="#6366F1" />
+              <Text style={styles.metricNumber}>{metricas.pedidosPendentes}</Text>
+              <Text style={styles.metricLabel}>Pedidos{'\n'}Pendentes</Text>
+            </View>
+            <View style={[styles.metricCard, styles.metricCardWarning]}>
+              <Ionicons name="warning-outline" size={24} color="#F59E0B" />
+              <Text style={styles.metricNumber}>{metricas.estoqueMinimo}</Text>
+              <Text style={styles.metricLabel}>Itens Estoque{'\n'}Mínimo</Text>
+            </View>
+          </View>
+          
+          <View style={styles.metricRow}>
+            <View style={[styles.metricCard, styles.metricCardSuccess]}>
+              <Ionicons name="people-outline" size={24} color="#10B981" />
+              <Text style={styles.metricNumber}>{metricas.fornecedoresAtivos}</Text>
+              <Text style={styles.metricLabel}>Fornecedores{'\n'}Ativos</Text>
+            </View>
+            <View style={[styles.metricCard, styles.metricCardInfo]}>
+              <Ionicons name="card-outline" size={24} color="#3B82F6" />
+              <Text style={styles.metricNumber}>R$ {(metricas.valorMensal / 1000).toFixed(0)}K</Text>
+              <Text style={styles.metricLabel}>Gasto{'\n'}Mensal</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Gráfico de Gastos Mensais */}
+        <View style={styles.chartCard}>
+          <View style={styles.chartHeader}>
+            <Text style={styles.chartTitle}>Evolução de Gastos (6 meses)</Text>
+            <View style={styles.chartBadge}>
+              <Text style={styles.chartBadgeText}>+5.2%</Text>
+            </View>
+          </View>
+          <LineChart
+            data={gastosMensais}
+            width={screenWidth - 60}
+            height={200}
+            chartConfig={chartConfig}
+            bezier
+            style={styles.chart}
+            withInnerLines={false}
+            withOuterLines={false}
+            withVerticalLines={false}
+            withHorizontalLines={true}
+            segments={4}
+          />
+        </View>
+
+        {/* Gráfico de Categorias de Gastos */}
+        <View style={styles.chartCard}>
+          <Text style={styles.chartTitle}>Distribuição por Categoria</Text>
+          <PieChart
+            data={categoriaGastos}
+            width={screenWidth - 60}
+            height={200}
+            chartConfig={chartConfig}
+            accessor="population"
+            backgroundColor="transparent"
+            paddingLeft="15"
+            style={styles.chart}
+          />
+        </View>
+
+        {/* Progresso das Metas */}
+        <View style={styles.chartCard}>
+          <Text style={styles.chartTitle}>Progresso das Metas 2025</Text>
+          <ProgressChart
+            data={progressoMetas}
+            width={screenWidth - 60}
+            height={200}
+            strokeWidth={16}
+            radius={32}
+            chartConfig={{
+              ...chartConfig,
+              color: (opacity = 1, index) => {
+                const colors = ['#6366F1', '#10B981', '#F59E0B', '#EF4444'];
+                return colors[index % colors.length];
+              }
+            }}
+            hideLegend={false}
+            style={styles.chart}
+          />
+        </View>
+
+        {/* Performance dos Fornecedores */}
+        <View style={styles.chartCard}>
+          <Text style={styles.chartTitle}>Performance dos Fornecedores (%)</Text>
+          <BarChart
+            data={fornecedoresPerformance}
+            width={screenWidth - 60}
+            height={200}
+            chartConfig={{
+              ...chartConfig,
+              barPercentage: 0.7,
+              fillShadowGradient: '#6366F1',
+              fillShadowGradientOpacity: 1,
+            }}
+            style={styles.chart}
+            showValuesOnTopOfBars={true}
+            fromZero={true}
+          />
+        </View>
+
+        {/* Alertas de Estoque */}
+        <View style={styles.alertasCard}>
+          <View style={styles.alertasHeader}>
+            <View style={styles.alertasTitleContainer}>
+              <Ionicons name="alert-circle-outline" size={24} color="#EF4444" />
+              <Text style={styles.alertasTitle}>Alertas de Estoque</Text>
+            </View>
+            <View style={styles.alertasBadge}>
+              <Text style={styles.alertasBadgeText}>{alertasSuprimentos.length}</Text>
+            </View>
+          </View>
+
+          <FlatList
+            data={alertasSuprimentos}
+            renderItem={renderAlertaItem}
+            keyExtractor={(item) => item.id.toString()}
+            scrollEnabled={false}
+            style={styles.alertasList}
+            showsVerticalScrollIndicator={false}
+          />
+        </View>
+
+        {/* Calendar Card */}
         <View style={styles.calendarCard}>
           <View style={styles.calendarHeader}>
             <Text style={styles.calendarTitle}>Cronograma</Text>
@@ -292,40 +469,7 @@ export default function SuppliesDashboard() {
           </View>
         </View>
 
-        {/* Cards de Métricas */}
-        <View style={styles.metricsContainer}>
-          <View style={styles.metricRow}>
-            <View style={[styles.metricCard, styles.metricCardPrimary]}>
-              <Ionicons name="clipboard-outline" size={24} color="#6366F1" />
-              <Text style={styles.metricNumber}>{metricas.pedidosPendentes}</Text>
-              <Text style={styles.metricLabel}>Pedidos{'\n'}Pendentes</Text>
-            </View>
-            <View style={[styles.metricCard, styles.metricCardWarning]}>
-              <Ionicons name="warning-outline" size={24} color="#F59E0B" />
-              <Text style={styles.metricNumber}>{metricas.estoqueMinimo}</Text>
-              <Text style={styles.metricLabel}>Itens Estoque{'\n'}Mínimo</Text>
-            </View>
-          </View>
-          
-          <View style={styles.metricRow}>
-            <View style={[styles.metricCard, styles.metricCardSuccess]}>
-              <Ionicons name="people-outline" size={24} color="#10B981" />
-              <Text style={styles.metricNumber}>{metricas.fornecedoresAtivos}</Text>
-              <Text style={styles.metricLabel}>Fornecedores{'\n'}Ativos</Text>
-            </View>
-            <View style={[styles.metricCard, styles.metricCardInfo]}>
-              <Ionicons name="card-outline" size={24} color="#3B82F6" />
-              <Text style={styles.metricNumber}>R$ {(metricas.valorMensal / 1000).toFixed(0)}K</Text>
-              <Text style={styles.metricLabel}>Gasto{'\n'}Mensal</Text>
-            </View>
-          </View>
-        </View>
-
-       
-
-        
-
-        {/* Todo Card - mantendo funcionalidade original mas com tema de suprimentos */}
+        {/* Todo Card */}
         <View style={styles.todoCard}>
           <View style={styles.todoHeader}>
             <View style={styles.todoTitleContainer}>
@@ -362,7 +506,7 @@ export default function SuppliesDashboard() {
         </View>
       </ScrollView>
 
-      {/* Modal para adicionar tarefa - mantendo funcionalidade original */}
+      {/* Modal para adicionar tarefa */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -496,6 +640,45 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 16
   },
+  chartCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 24,
+    marginHorizontal: 20,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3
+  },
+  chartHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20
+  },
+  chartTitle: {
+    fontSize: 18,
+    fontFamily: 'Poppins-SemiBold',
+    color: '#1F2937',
+    flex: 1
+  },
+  chartBadge: {
+    backgroundColor: '#10B981',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12
+  },
+  chartBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontFamily: 'Poppins-SemiBold'
+  },
+  chart: {
+    marginVertical: 8,
+    borderRadius: 16
+  },
   calendarCard: {
     backgroundColor: '#374151',
     borderRadius: 24,
@@ -564,6 +747,9 @@ const styles = StyleSheet.create({
     elevation: 3
   },
   alertasHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 20
   },
   alertasTitleContainer: {
@@ -576,16 +762,18 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-SemiBold',
     marginLeft: 12
   },
-  emptyAlertasContainer: {
-    alignItems: 'center',
-    paddingVertical: 20
+  alertasBadge: {
+    backgroundColor: '#EF4444',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center'
   },
-  emptyAlertasText: {
-    color: '#6B7280',
-    fontSize: 14,
-    fontFamily: 'Poppins-Regular',
-    textAlign: 'center',
-    marginTop: 12
+  alertasBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontFamily: 'Poppins-Bold'
   },
   alertasList: {
     flex: 1
@@ -627,6 +815,12 @@ const styles = StyleSheet.create({
   alertaCategoria: {
     color: '#6B7280',
     fontSize: 12,
+    fontFamily: 'Poppins-Regular',
+    marginBottom: 2
+  },
+  alertaQuantidade: {
+    color: '#374151',
+    fontSize: 11,
     fontFamily: 'Poppins-Regular'
   },
   alertaNivel: {
@@ -808,3 +1002,4 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-SemiBold'
   }
 });
+

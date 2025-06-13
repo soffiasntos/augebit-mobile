@@ -12,11 +12,11 @@ import {
   Modal,
   ScrollView,
   Dimensions,
-  StatusBar
+  StatusBar,
+  Linking
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import Layout from '../components/Layout';
-import { Linking } from 'react-native';
 import { API_URL } from '../components/config'; // caminho relativo ao seu projeto
 
 

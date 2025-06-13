@@ -14,7 +14,7 @@ export const NotificationProvider = ({ children }) => {
   const [produtosBaixoEstoque, setProdutosBaixoEstoque] = useState([]);
   const [hasNotifications, setHasNotifications] = useState(false);
 
-  // Atualizar notificações baseado nos produtos com baixo estoque
+  // Esse é pra atualizar notificações baseado nos produtos com baixo estoque
   useEffect(() => {
     setHasNotifications(produtosBaixoEstoque.length > 0);
   }, [produtosBaixoEstoque]);

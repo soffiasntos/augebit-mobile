@@ -8,14 +8,17 @@ import {
   StyleSheet, 
   KeyboardAvoidingView, 
   Platform, 
-  Image, 
   ActivityIndicator,
   Keyboard,
   TouchableWithoutFeedback,
-  Dimensions
+  StatusBar,
+  Dimensions,
+  Animated
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Layout from '../components/Layout';
+
+const { height: screenHeight } = Dimensions.get('window');
 
 const SupplyAIChatScreen = () => {
   const [messages, setMessages] = useState([
@@ -29,53 +32,122 @@ const SupplyAIChatScreen = () => {
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [inputHeight, setInputHeight] = useState(36);
+  const [showSuggestions, setShowSuggestions] = useState(true);
+  
   const flatListRef = useRef(null);
   const inputRef = useRef(null);
+  const keyboardOffset = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    const showSubscription = Keyboard.addListener('keyboardDidShow', (e) => {
-      setKeyboardHeight(e.endCoordinates.height);
-      setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
-      }, 100);
-    });
-    const hideSubscription = Keyboard.addListener('keyboardDidHide', () => {
-      setKeyboardHeight(0);
-    });
+    const keyboardWillShowListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (event) => {
+        const { height } = event.endCoordinates;
+        setKeyboardHeight(height);
+        setShowSuggestions(false);
+        
+        Animated.timing(keyboardOffset, {
+          toValue: -height,
+          duration: Platform.OS === 'ios' ? 250 : 200,
+          useNativeDriver: false,
+        }).start();
+        
+        setTimeout(() => {
+          flatListRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+      }
+    );
+
+    const keyboardWillHideListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setKeyboardHeight(0);
+        setShowSuggestions(messages.length <= 1);
+        
+        Animated.timing(keyboardOffset, {
+          toValue: 0,
+          duration: Platform.OS === 'ios' ? 250 : 200,
+          useNativeDriver: false,
+        }).start();
+      }
+    );
 
     return () => {
-      showSubscription.remove();
-      hideSubscription.remove();
+      keyboardWillShowListener.remove();
+      keyboardWillHideListener.remove();
     };
-  }, []);
+  }, [messages.length]);
 
   const getGeminiResponse = async (userMessage) => {
     try {
-      const API_KEY = 'AIzaSyCVAC4FYluyYhZOYEuuXjmFPsuuVXC9maM';
-      const url = `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${API_KEY}`;
+      const API_KEY = 'AIzaSyD-Lz3YQEDQ1MO7uIkg9n-iSbQQ63KrMDU';
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+      
+      const contextualMessage = `Como consultor especializado em suprimentos para Design & Tecnologia, responda de forma profissional e útil: ${userMessage}`;
       
       const response = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify({
           contents: [{
-            role: "user",
-            parts: [{ text: userMessage }]
-          }]
+            parts: [{ text: contextualMessage }]
+          }],
+          generationConfig: {
+            temperature: 0.7,
+            topK: 40,
+            topP: 0.95,
+            maxOutputTokens: 1024,
+          },
+          safetySettings: [
+            {
+              category: "HARM_CATEGORY_HARASSMENT",
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
+            },
+            {
+              category: "HARM_CATEGORY_HATE_SPEECH", 
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
+            },
+            {
+              category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
+            },
+            {
+              category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
+            }
+          ]
         })
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error?.message || 'Erro desconhecido na API');
+        console.error('API Error:', errorData);
+        throw new Error(errorData.error?.message || `HTTP ${response.status}: ${response.statusText}`);
       }
 
       const data = await response.json();
-      return data.candidates?.[0]?.content?.parts?.[0]?.text || 
-             "Não consegui gerar uma resposta. Reformule sua pergunta.";
+      const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      
+      if (!generatedText) {
+        console.error('No text generated:', data);
+        throw new Error('Resposta vazia da API');
+      }
+      
+      return generatedText;
     } catch (error) {
       console.error("Erro detalhado na API:", error);
-      return "Desculpe, estou tendo dificuldades técnicas. Por favor, tente novamente mais tarde.";
+      if (error.message.includes('API key')) {
+        return "Erro de autenticação. Verifique a chave da API.";
+      } else if (error.message.includes('quota')) {
+        return "Limite de uso da API atingido. Tente novamente mais tarde.";
+      } else if (error.message.includes('network') || error.message.includes('fetch')) {
+        return "Problema de conexão. Verifique sua internet e tente novamente.";
+      }
+      return `Erro técnico: ${error.message}. Tente novamente em alguns instantes.`;
     }
   };
 
@@ -88,7 +160,7 @@ const SupplyAIChatScreen = () => {
       addMessage(aiResponse, 'ai');
     } catch (error) {
       console.error('Erro:', error);
-      addMessage('Houve um problema na comunicação com o assistente.', 'ai');
+      addMessage('Houve um problema na comunicação. Tente novamente.', 'ai');
     } finally {
       setIsLoading(false);
     }
@@ -108,117 +180,194 @@ const SupplyAIChatScreen = () => {
   };
 
   const handleSend = () => {
-    if (inputText.trim() === '') return;
+    if (inputText.trim() === '' || isLoading) return;
     
-    addMessage(inputText, 'user');
+    const messageToSend = inputText.trim();
+    addMessage(messageToSend, 'user');
     setInputText('');
-    sendMessageToGemini(inputText);
-    Keyboard.dismiss();
+    setInputHeight(36); // Reset input height
+    sendMessageToGemini(messageToSend);
   };
 
   const quickSuggestions = [
-    'Recomende impressoras 3D para prototipagem',
-    'Quais tablets têm o melhor custo-benefício?',
-    'Mostre tendências em mesas digitalizadoras',
-    'Alertas de promoção para SSDs',
+    { text: 'Notebooks para design', emoji: '💻' },
+    { text: 'Impressoras 3D', emoji: '🖨️' },
+    { text: 'Tablets para desenho', emoji: '📱' },
+    { text: 'Armazenamento SSD', emoji: '💾' },
+    { text: 'Monitores 4K', emoji: '🖥️' },
+    { text: 'Mesa digitalizadora', emoji: '✏️' }
   ];
 
   const dismissKeyboard = () => {
     Keyboard.dismiss();
   };
 
+  const formatTime = (timestamp) => {
+    return new Date(timestamp).toLocaleTimeString('pt-BR', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+  };
+
+  const handleInputChange = (text) => {
+    setInputText(text);
+  };
+
+  const handleContentSizeChange = (event) => {
+    const newHeight = Math.min(Math.max(36, event.nativeEvent.contentSize.height), 120);
+    setInputHeight(newHeight);
+  };
+
+  const renderMessage = ({ item, index }) => {
+    const isUser = item.sender === 'user';
+    const isLastMessage = index === messages.length - 1;
+    const isFirstInGroup = index === 0 || messages[index - 1].sender !== item.sender;
+    const isLastInGroup = index === messages.length - 1 || messages[index + 1]?.sender !== item.sender;
+
+    return (
+      <View style={[
+        styles.messageContainer,
+        isUser ? styles.userMessageContainer : styles.aiMessageContainer,
+        isFirstInGroup && styles.firstInGroup,
+        isLastInGroup && styles.lastInGroup
+      ]}>
+        <Animated.View style={[
+          styles.messageBubble,
+          isUser ? styles.userBubble : styles.aiBubble,
+          isFirstInGroup && (isUser ? styles.userBubbleFirst : styles.aiBubbleFirst),
+          isLastInGroup && (isUser ? styles.userBubbleLast : styles.aiBubbleLast),
+          !isFirstInGroup && !isLastInGroup && (isUser ? styles.userBubbleMiddle : styles.aiBubbleMiddle)
+        ]}>
+          <Text style={[
+            styles.messageText,
+            isUser ? styles.userText : styles.aiText
+          ]}>
+            {item.text}
+          </Text>
+          <Text style={[
+            styles.timestamp,
+            isUser ? styles.timestampUser : styles.timestampAi
+          ]}>
+            {formatTime(item.timestamp)}
+          </Text>
+        </Animated.View>
+      </View>
+    );
+  };
+
   return (
     <Layout>
-      <TouchableWithoutFeedback onPress={dismissKeyboard}>
-        <View style={styles.container}>
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>Consultor de Suprimentos</Text>
-            <Text style={styles.headerSubtitle}>Design & Tecnologia</Text>
+      <StatusBar barStyle="light-content" backgroundColor="#000" translucent />
+      <View style={styles.container}>
+        {/* Header aprimorado */}
+        <View style={styles.header}>
+          <View style={styles.headerContent}>
+            <View style={styles.aiIndicator}>
+              <View style={styles.statusDot} />
+              <Text style={styles.headerTitle}>Consultor IA</Text>
+            </View>
+            <Text style={styles.headerSubtitle}>Design & Tech</Text>
           </View>
+        </View>
 
+        {/* Container principal com animação */}
+        <Animated.View style={[styles.mainContainer, { transform: [{ translateY: keyboardOffset }] }]}>
+          {/* Lista de mensagens */}
           <FlatList
             ref={flatListRef}
             data={messages}
             keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <View style={[
-                styles.messageContainer,
-                item.sender === 'ai' ? styles.aiMessage : styles.userMessage
-              ]}>
-                {item.sender === 'ai' && (
-                  <Image
-                    source={{ uri: 'https://i.imgur.com/3QX1S7O.png' }}
-                    style={styles.avatar}
-                    onError={(e) => console.log('Erro ao carregar avatar:', e.nativeEvent.error)}
-                  />
-                )}
-                <View style={[
-                  styles.messageBubble,
-                  item.sender === 'ai' ? styles.aiBubble : styles.userBubble
-                ]}>
-                  <Text style={item.sender === 'ai' ? styles.aiText : styles.userText}>
-                    {item.text}
-                  </Text>
-                  <Text style={styles.timestamp}>
-                    {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </Text>
-                </View>
-              </View>
-            )}
-            contentContainerStyle={styles.messagesList}
+            renderItem={renderMessage}
+            contentContainerStyle={[
+              styles.messagesList,
+              { paddingBottom: keyboardHeight > 0 ? 10 : 20 }
+            ]}
+            showsVerticalScrollIndicator={false}
             keyboardDismissMode="on-drag"
             keyboardShouldPersistTaps="handled"
-            onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-            onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
+            onContentSizeChange={() => {
+              setTimeout(() => {
+                flatListRef.current?.scrollToEnd({ animated: true });
+              }, 100);
+            }}
           />
 
-          <View style={[styles.quickSuggestions, { display: keyboardHeight > 0 ? 'none' : 'flex' }]}>
-            {quickSuggestions.map((suggestion, index) => (
-              <TouchableOpacity
-                key={index}
-                style={styles.suggestionButton}
-                onPress={() => {
-                  setInputText(suggestion);
-                  inputRef.current?.focus();
-                }}
-              >
-                <Text style={styles.suggestionText}>{suggestion}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          {/* Indicador de digitação melhorado */}
+          {isLoading && (
+            <Animated.View style={styles.typingIndicator}>
+              <View style={styles.typingBubble}>
+                <View style={styles.typingDots}>
+                  <View style={[styles.dot, styles.dot1]} />
+                  <View style={[styles.dot, styles.dot2]} />
+                  <View style={[styles.dot, styles.dot3]} />
+                </View>
+              </View>
+            </Animated.View>
+          )}
 
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
-            style={[styles.inputContainer, { marginBottom: keyboardHeight > 0 ? keyboardHeight - (Platform.OS === 'ios' ? 30 : 0) : 0 }]}
-          >
-            <TextInput
-              ref={inputRef}
-              style={styles.input}
-              value={inputText}
-              onChangeText={setInputText}
-              placeholder="Digite sua mensagem..."
-              placeholderTextColor="#999"
-              multiline
-              editable={!isLoading}
-              onSubmitEditing={handleSend}
-              returnKeyType="send"
-              blurOnSubmit={false}
-            />
-            <TouchableOpacity
-              style={[styles.sendButton, isLoading && styles.disabledButton]}
-              onPress={handleSend}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <Ionicons name="send" size={24} color="#fff" />
-              )}
-            </TouchableOpacity>
-          </KeyboardAvoidingView>
-        </View>
-      </TouchableWithoutFeedback>
+          {/* Sugestões rápidas melhoradas */}
+          {showSuggestions && (
+            <View style={styles.suggestionsContainer}>
+              <Text style={styles.suggestionsTitle}>Sugestões rápidas:</Text>
+              <View style={styles.suggestionsGrid}>
+                {quickSuggestions.map((suggestion, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={styles.suggestionChip}
+                    onPress={() => {
+                      setInputText(suggestion.text);
+                      inputRef.current?.focus();
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.suggestionEmoji}>{suggestion.emoji}</Text>
+                    <Text style={styles.suggestionText}>{suggestion.text}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {/* Container de input melhorado */}
+          <TouchableWithoutFeedback onPress={dismissKeyboard}>
+            <View style={styles.inputWrapper}>
+              <View style={styles.inputContainer}>
+                <View style={styles.inputRow}>
+                  <TextInput
+                    ref={inputRef}
+                    style={[styles.input, { height: inputHeight }]}
+                    value={inputText}
+                    onChangeText={handleInputChange}
+                    onContentSizeChange={handleContentSizeChange}
+                    placeholder="Digite sua mensagem..."
+                    placeholderTextColor="#9CA3AF"
+                    multiline
+                    maxLength={1000}
+                    editable={!isLoading}
+                    scrollEnabled={false}
+                    textAlignVertical="top"
+                  />
+                  <TouchableOpacity
+                    style={[
+                      styles.sendButton,
+                      (inputText.trim() === '' || isLoading) && styles.sendButtonDisabled
+                    ]}
+                    onPress={handleSend}
+                    disabled={inputText.trim() === '' || isLoading}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons 
+                      name={isLoading ? "ellipsis-horizontal" : "arrow-up"} 
+                      size={20} 
+                      color={(inputText.trim() === '' || isLoading) ? '#9CA3AF' : '#FFFFFF'} 
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </TouchableWithoutFeedback>
+        </Animated.View>
+      </View>
     </Layout>
   );
 };
@@ -226,150 +375,246 @@ const SupplyAIChatScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#FFFFFF',
   },
   header: {
-    padding: 16,
-    backgroundColor: '#6200ee',
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    paddingTop: Platform.OS === 'ios' ? 50 : 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
+    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    paddingBottom: 16,
+    paddingHorizontal: 20,
+    backgroundColor: '#000000',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  headerContent: {
+    alignItems: 'flex-start',
+  },
+  aiIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#10B981',
+    marginRight: 8,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 0 },
     shadowRadius: 4,
-    elevation: 5,
-    zIndex: 1,
+    shadowOpacity: 0.6,
   },
   headerTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   headerSubtitle: {
     fontSize: 14,
-    color: '#fff',
-    opacity: 0.8,
+    color: '#9CA3AF',
+    marginLeft: 16,
+    fontWeight: '500',
+  },
+  mainContainer: {
+    flex: 1,
   },
   messagesList: {
-    padding: 16,
-    paddingBottom: 80,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    flexGrow: 1,
   },
   messageContainer: {
-    flexDirection: 'row',
-    marginBottom: 16,
+    marginVertical: 1,
+  },
+  userMessageContainer: {
     alignItems: 'flex-end',
   },
-  aiMessage: {
-    justifyContent: 'flex-start',
+  aiMessageContainer: {
+    alignItems: 'flex-start',
   },
-  userMessage: {
-    justifyContent: 'flex-end',
+  firstInGroup: {
+    marginTop: 12,
   },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    marginRight: 8,
-    borderWidth: 1,
-    borderColor: '#ddd',
+  lastInGroup: {
+    marginBottom: 8,
   },
   messageBubble: {
-    maxWidth: '80%',
-    padding: 12,
-    borderRadius: 16,
+    maxWidth: '85%',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
   },
-  aiBubble: {
-    backgroundColor: '#fff',
-    borderBottomLeftRadius: 4,
-  },
   userBubble: {
-    backgroundColor: '#6200ee',
-    borderBottomRightRadius: 4,
+    backgroundColor: '#007AFF',
   },
-  aiText: {
-    color: '#333',
+  aiBubble: {
+    backgroundColor: '#F8F9FA',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  userBubbleFirst: {
+    borderTopRightRadius: 20,
+    borderBottomRightRadius: 6,
+  },
+  userBubbleLast: {
+    borderTopRightRadius: 6,
+    borderBottomRightRadius: 20,
+  },
+  userBubbleMiddle: {
+    borderTopRightRadius: 6,
+    borderBottomRightRadius: 6,
+  },
+  aiBubbleFirst: {
+    borderTopLeftRadius: 20,
+    borderBottomLeftRadius: 6,
+  },
+  aiBubbleLast: {
+    borderTopLeftRadius: 6,
+    borderBottomLeftRadius: 20,
+  },
+  aiBubbleMiddle: {
+    borderTopLeftRadius: 6,
+    borderBottomLeftRadius: 6,
+  },
+  messageText: {
     fontSize: 16,
     lineHeight: 22,
+    fontWeight: '400',
   },
   userText: {
-    color: '#fff',
-    fontSize: 16,
-    lineHeight: 22,
+    color: '#FFFFFF',
+  },
+  aiText: {
+    color: '#1F2937',
   },
   timestamp: {
-    fontSize: 10,
-    marginTop: 4,
-    opacity: 0.6,
+    fontSize: 11,
+    marginTop: 6,
+    fontWeight: '500',
+  },
+  timestampUser: {
+    color: 'rgba(255, 255, 255, 0.8)',
     textAlign: 'right',
-    color: '#666',
+  },
+  timestampAi: {
+    color: '#9CA3AF',
+    textAlign: 'left',
+  },
+  typingIndicator: {
+    alignItems: 'flex-start',
+    paddingHorizontal: 16,
+    marginBottom: 8,
+  },
+  typingBubble: {
+    backgroundColor: '#F8F9FA',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  typingDots: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#9CA3AF',
+    marginHorizontal: 2,
+  },
+  suggestionsContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    backgroundColor: '#FAFAFA',
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+  },
+  suggestionsTitle: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 12,
+    fontWeight: '600',
+  },
+  suggestionsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  suggestionChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  suggestionEmoji: {
+    fontSize: 16,
+    marginRight: 6,
+  },
+  suggestionText: {
+    fontSize: 14,
+    color: '#374151',
+    fontWeight: '500',
+  },
+  inputWrapper: {
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
   },
   inputContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  inputRow: {
     flexDirection: 'row',
-    padding: 12,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-    alignItems: 'center',
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
+    alignItems: 'flex-end',
+    gap: 8,
   },
   input: {
     flex: 1,
-    minHeight: 48,
-    maxHeight: 120,
+    minHeight: 36,
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 24,
-    marginRight: 8,
+    paddingVertical: 8,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
     fontSize: 16,
-    lineHeight: 20,
-    textAlignVertical: 'center',
+    color: '#1F2937',
+    fontWeight: '400',
   },
   sendButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#6200ee',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#007AFF',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: '#007AFF',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 3,
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
   },
-  disabledButton: {
-    opacity: 0.6,
-  },
-  quickSuggestions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    padding: 12,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-  },
-  suggestionButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    margin: 4,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#ddd',
-  },
-  suggestionText: {
-    fontSize: 13,
-    color: '#333',
+  sendButtonDisabled: {
+    backgroundColor: '#E5E7EB',
+    shadowOpacity: 0,
+    elevation: 0,
   },
 });
 
