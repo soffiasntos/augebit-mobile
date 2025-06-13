@@ -305,34 +305,43 @@ export default function SuppliesDashboard() {
           <Text style={styles.empresa}>TechDesign Solutions</Text>
         </View>
 
-        {/* Cards de Métricas Principais */}
-        <View style={styles.metricsContainer}>
-          <View style={styles.metricRow}>
-            <View style={[styles.metricCard, styles.metricCardPrimary]}>
-              <Ionicons name="clipboard-outline" size={24} color="#6366F1" />
-              <Text style={styles.metricNumber}>{metricas.pedidosPendentes}</Text>
-              <Text style={styles.metricLabel}>Pedidos{'\n'}Pendentes</Text>
-            </View>
-            <View style={[styles.metricCard, styles.metricCardWarning]}>
-              <Ionicons name="warning-outline" size={24} color="#F59E0B" />
-              <Text style={styles.metricNumber}>{metricas.estoqueMinimo}</Text>
-              <Text style={styles.metricLabel}>Itens Estoque{'\n'}Mínimo</Text>
-            </View>
+
+{/* Calendar Card */}
+        <View style={styles.calendarCard}>
+          <View style={styles.calendarHeader}>
+            <Text style={styles.calendarTitle}>Cronograma</Text>
+            <Text style={styles.calendarDate}>
+              {dataAtual.mes} {dataAtual.dia ? dataAtual.dia.toString().padStart(2, '0') : '01'}, {dataAtual.ano}
+            </Text>
           </View>
           
-          <View style={styles.metricRow}>
-            <View style={[styles.metricCard, styles.metricCardSuccess]}>
-              <Ionicons name="people-outline" size={24} color="#10B981" />
-              <Text style={styles.metricNumber}>{metricas.fornecedoresAtivos}</Text>
-              <Text style={styles.metricLabel}>Fornecedores{'\n'}Ativos</Text>
-            </View>
-            <View style={[styles.metricCard, styles.metricCardInfo]}>
-              <Ionicons name="card-outline" size={24} color="#3B82F6" />
-              <Text style={styles.metricNumber}>R$ {(metricas.valorMensal / 1000).toFixed(0)}K</Text>
-              <Text style={styles.metricLabel}>Gasto{'\n'}Mensal</Text>
-            </View>
+          <View style={styles.weekContainer}>
+            {diasSemana.map((dia, index) => (
+              <View 
+                key={index} 
+                style={[
+                  styles.dayContainer, 
+                  dia.isToday && styles.todayContainer
+                ]}
+              >
+                <Text style={[
+                  styles.dayNumber, 
+                  dia.isToday && styles.todayNumber
+                ]}>
+                  {dia.dia}
+                </Text>
+                <Text style={[
+                  styles.dayName, 
+                  dia.isToday && styles.todayName
+                ]}>
+                  {dia.diaSemana}
+                </Text>
+              </View>
+            ))}
           </View>
         </View>
+
+        
 
         {/* Gráfico de Gastos Mensais */}
         <View style={styles.chartCard}>
@@ -412,62 +421,7 @@ export default function SuppliesDashboard() {
           />
         </View>
 
-        {/* Alertas de Estoque */}
-        <View style={styles.alertasCard}>
-          <View style={styles.alertasHeader}>
-            <View style={styles.alertasTitleContainer}>
-              <Ionicons name="alert-circle-outline" size={24} color="#EF4444" />
-              <Text style={styles.alertasTitle}>Alertas de Estoque</Text>
-            </View>
-            <View style={styles.alertasBadge}>
-              <Text style={styles.alertasBadgeText}>{alertasSuprimentos.length}</Text>
-            </View>
-          </View>
-
-          <FlatList
-            data={alertasSuprimentos}
-            renderItem={renderAlertaItem}
-            keyExtractor={(item) => item.id.toString()}
-            scrollEnabled={false}
-            style={styles.alertasList}
-            showsVerticalScrollIndicator={false}
-          />
-        </View>
-
-        {/* Calendar Card */}
-        <View style={styles.calendarCard}>
-          <View style={styles.calendarHeader}>
-            <Text style={styles.calendarTitle}>Cronograma</Text>
-            <Text style={styles.calendarDate}>
-              {dataAtual.mes} {dataAtual.dia ? dataAtual.dia.toString().padStart(2, '0') : '01'}, {dataAtual.ano}
-            </Text>
-          </View>
-          
-          <View style={styles.weekContainer}>
-            {diasSemana.map((dia, index) => (
-              <View 
-                key={index} 
-                style={[
-                  styles.dayContainer, 
-                  dia.isToday && styles.todayContainer
-                ]}
-              >
-                <Text style={[
-                  styles.dayNumber, 
-                  dia.isToday && styles.todayNumber
-                ]}>
-                  {dia.dia}
-                </Text>
-                <Text style={[
-                  styles.dayName, 
-                  dia.isToday && styles.todayName
-                ]}>
-                  {dia.diaSemana}
-                </Text>
-              </View>
-            ))}
-          </View>
-        </View>
+       
 
         {/* Todo Card */}
         <View style={styles.todoCard}>
