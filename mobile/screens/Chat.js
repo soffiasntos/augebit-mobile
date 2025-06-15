@@ -84,7 +84,7 @@ const SupplyAIChatScreen = () => {
       const API_KEY = 'AIzaSyD-Lz3YQEDQ1MO7uIkg9n-iSbQQ63KrMDU';
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
       
-      const contextualMessage = `Como consultor especializado em suprimentos para Design & Tecnologia, responda de forma profissional e útil: ${userMessage}`;
+      const contextualMessage = `Como consultor especializado em suprimentos para Design & Tecnologia, responda de forma profissional e útil no máximo em 7 linhas : ${userMessage}`;
       
       const response = await fetch(url, {
         method: 'POST',
