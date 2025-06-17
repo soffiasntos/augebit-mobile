@@ -32,6 +32,7 @@ export default function SuppliesDashboard() {
   const [todos, setTodos] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [novaTarefa, setNovaTarefa] = useState('');
+  const [activeTab, setActiveTab] = useState('Todas');
   
   // Estados específicos para o dashboard de suprimentos
   const [metricas, setMetricas] = useState({
@@ -300,18 +301,20 @@ export default function SuppliesDashboard() {
       <ScrollView showsVerticalScrollIndicator={false} style={styles.container}>
         {/* Header com saudação personalizada para suprimentos */}
         <View style={styles.headerContainer}>
-          <Text style={styles.greeting}>Olá,{'\n'}{nomeUsuario}</Text>
-          <Text style={styles.departamento}>Departamento de Suprimentos</Text>
-          <Text style={styles.empresa}>TechDesign Solutions</Text>
+          <Text style={styles.greeting}>Olá, {nomeUsuario},</Text>
+          <Text style={styles.greetingSecond}>
+            <Text style={styles.bemVinda}>bem-vinda </Text>
+            <Text style={styles.deVolta}>de volta!</Text>
+          </Text>
+          <Text style={styles.departamento}>Departamento de suprimentos</Text>
         </View>
 
-
-{/* Calendar Card */}
+        {/* Calendar Card */}
         <View style={styles.calendarCard}>
           <View style={styles.calendarHeader}>
-            <Text style={styles.calendarTitle}>Cronograma</Text>
+            <Text style={styles.calendarTitle}>Hoje</Text>
             <Text style={styles.calendarDate}>
-              {dataAtual.mes} {dataAtual.dia ? dataAtual.dia.toString().padStart(2, '0') : '01'}, {dataAtual.ano}
+              {dataAtual.mes} {'\n'}{dataAtual.dia ? dataAtual.dia.toString().padStart(2, '0') : '01'}, {dataAtual.ano}
             </Text>
           </View>
           
@@ -341,7 +344,11 @@ export default function SuppliesDashboard() {
           </View>
         </View>
 
-        
+        {/* Motivational Message */}
+        <View style={styles.motivationalCard}>
+          <Text style={styles.motivationalTitle}>Dê uma olhada!</Text>
+          <Text style={styles.motivationalSubtitle}>Acompanhe a estatística da Augebit!</Text>
+        </View>
 
         {/* Gráfico de Gastos Mensais */}
         <View style={styles.chartCard}>
@@ -366,86 +373,90 @@ export default function SuppliesDashboard() {
           />
         </View>
 
-        {/* Gráfico de Categorias de Gastos */}
-        <View style={styles.chartCard}>
-          <Text style={styles.chartTitle}>Distribuição por Categoria</Text>
-          <PieChart
-            data={categoriaGastos}
-            width={screenWidth - 60}
-            height={200}
-            chartConfig={chartConfig}
-            accessor="population"
-            backgroundColor="transparent"
-            paddingLeft="15"
-            style={styles.chart}
-          />
-        </View>
+        {/* Dashboard Overview */}
+        <View style={styles.dashboardOverviewContainer}>
+          <Text style={styles.dashboardTitle}>Dashboard overview</Text>
+          
+          {/* Tab Buttons */}
+          <View style={styles.tabContainer}>
+            {['Todas', 'Cronograma', 'Pendências'].map((tab) => (
+              <TouchableOpacity
+                key={tab}
+                style={[
+                  styles.tabButton,
+                  activeTab === tab && styles.activeTabButton
+                ]}
+                onPress={() => setActiveTab(tab)}
+              >
+                <Text style={[
+                  styles.tabButtonText,
+                  activeTab === tab && styles.activeTabButtonText
+                ]}>
+                  {tab}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
 
-        {/* Progresso das Metas */}
-        <View style={styles.chartCard}>
-          <Text style={styles.chartTitle}>Progresso das Metas 2025</Text>
-          <ProgressChart
-            data={progressoMetas}
-            width={screenWidth - 60}
-            height={200}
-            strokeWidth={16}
-            radius={32}
-            chartConfig={{
-              ...chartConfig,
-              color: (opacity = 1, index) => {
-                const colors = ['#6366F1', '#10B981', '#F59E0B', '#EF4444'];
-                return colors[index % colors.length];
-              }
-            }}
-            hideLegend={false}
-            style={styles.chart}
-          />
-        </View>
+          {/* Dashboard Cards */}
+          <View style={styles.dashboardCardsContainer}>
+            {/* Cronograma Card */}
+            <TouchableOpacity style={styles.cronogramaCard}>
+              <View style={styles.cardHeader}>
+                <Text style={styles.cardTitle}>Cronograma</Text>
+                <View style={styles.cardIcon}>
+                  <Ionicons name="arrow-forward-outline" size={20} color="#FFFFFF" />
+                </View>
+              </View>
+              <Text style={styles.cardNumber}>57</Text>
+              <Text style={styles.cardSubtitle}>Eventos</Text>
+            </TouchableOpacity>
 
-        {/* Performance dos Fornecedores */}
-        <View style={styles.chartCard}>
-          <Text style={styles.chartTitle}>Performance dos Fornecedores (%)</Text>
-          <BarChart
-            data={fornecedoresPerformance}
-            width={screenWidth - 60}
-            height={200}
-            chartConfig={{
-              ...chartConfig,
-              barPercentage: 0.7,
-              fillShadowGradient: '#6366F1',
-              fillShadowGradientOpacity: 1,
-            }}
-            style={styles.chart}
-            showValuesOnTopOfBars={true}
-            fromZero={true}
-          />
-        </View>
+            {/* Bottom Row Cards */}
+            <View style={styles.bottomCardsRow}>
+              {/* Pendências Card */}
+              <TouchableOpacity style={styles.pendenciasCard}>
+                <View style={styles.cardHeader}>
+                  <Text style={styles.cardTitleSmall}>Pendências</Text>
+                  <View style={styles.cardIconSmall}>
+                    <Ionicons name="arrow-forward-outline" size={16} color="#4C1D95" />
+                  </View>
+                </View>
+                <Text style={styles.cardNumberSmall}>86</Text>
+                <Text style={styles.cardSubtitleSmall}>Pedidos incompletos</Text>
+              </TouchableOpacity>
 
-       
+              {/* Fornecedores Card */}
+              <TouchableOpacity style={styles.fornecedoresCard}>
+                <View style={styles.cardHeader}>
+                  <Text style={styles.cardTitleSmall}>Fornecedores</Text>
+                  <View style={styles.cardIconSmall}>
+                    <Ionicons name="arrow-forward-outline" size={16} color="#6B7280" />
+                  </View>
+                </View>
+                <Text style={styles.cardNumberSmall}>34</Text>
+                <Text style={styles.cardSubtitleSmall}>Fornecedores ativos</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
 
         {/* Todo Card */}
         <View style={styles.todoCard}>
           <View style={styles.todoHeader}>
-            <View style={styles.todoTitleContainer}>
-              <View style={styles.todoIndicator} />
-              <Text style={styles.todoTitle}>Tarefas de Suprimentos</Text>
-            </View>
+            <Text style={styles.todoTitle}>To do</Text>
             <TouchableOpacity 
               style={styles.addButton}
               onPress={() => setModalVisible(true)}
             >
-              <Ionicons name="add" size={20} color="#000" />
+              <Ionicons name="add" size={20} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
 
           {todos.length === 0 ? (
             <View style={styles.emptyTodoContainer}>
-              <Ionicons name="checkmark-circle-outline" size={48} color="#4B5563" />
               <Text style={styles.emptyTodoText}>
-                Nenhuma tarefa pendente no momento
-              </Text>
-              <Text style={styles.emptyTodoSubtext}>
-                Toque no + para adicionar uma nova tarefa
+                Nenhuma tarefa para fazer no momento
               </Text>
             </View>
           ) : (
@@ -525,79 +536,109 @@ const styles = StyleSheet.create({
     marginBottom: 25
   },
   greeting: {
-    fontSize: 27,
-    fontFamily: 'Poppins-Medium',
+    fontSize: 24,
+    fontFamily: 'Poppins-Regular',
     color: '#1F2937',
-    lineHeight: 38,
+    lineHeight: 32,
+    marginBottom: 0
+  },
+  greetingSecond: {
+    fontSize: 24,
+    fontFamily: 'Poppins-Regular',
+    color: '#1F2937',
+    lineHeight: 32,
     marginBottom: 8
   },
+  bemVinda: {
+    color: '#1F2937'
+  },
+  deVolta: {
+    color: '#6366F1'
+  },
   departamento: {
-    fontSize: 16,
+    fontSize: 14,
+    fontFamily: 'Poppins-Regular',
+    color: '#6B7280',
+    marginTop: 4
+  },
+  calendarCard: {
+    backgroundColor: '#1F2937',
+    borderRadius: 20,
+    padding: 20,
+    marginHorizontal: 20,
+    marginBottom: 20
+  },
+  calendarHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 24
+  },
+  calendarTitle: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontFamily: 'Poppins-Medium'
+  },
+  calendarDate: {
+    color: '#9CA3AF',
+    fontSize: 12,
+    fontFamily: 'Poppins-Regular',
+    textAlign: 'right',
+    lineHeight: 16
+  },
+  weekContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 0
+  },
+  dayContainer: {
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 6,
+    borderRadius: 12,
+    minWidth: 38,
+    flex: 1,
+    marginHorizontal: 2
+  },
+  todayContainer: {
+    backgroundColor: '#6366F1'
+  },
+  dayNumber: {
+    color: '#9CA3AF',
+    fontSize: 14,
     fontFamily: 'Poppins-Medium',
-    color: '#6366F1',
     marginBottom: 4
   },
-  empresa: {
+  todayNumber: {
+    color: '#FFFFFF'
+  },
+  dayName: {
+    color: '#6B7280',
+    fontSize: 10,
+    fontFamily: 'Poppins-Regular'
+  },
+  todayName: {
+    color: '#FFFFFF'
+  },
+  motivationalCard: {
+    paddingHorizontal: 20,
+    marginBottom: 20
+  },
+  motivationalTitle: {
+    fontSize: 18,
+    fontFamily: 'Poppins-SemiBold',
+    color: '#1F2937',
+    marginBottom: 4
+  },
+  motivationalSubtitle: {
     fontSize: 14,
     fontFamily: 'Poppins-Regular',
     color: '#6B7280'
   },
-  metricsContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 20
-  },
-  metricRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12
-  },
-  metricCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    flex: 1,
-    marginHorizontal: 6,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 3
-  },
-  metricCardPrimary: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#6366F1'
-  },
-  metricCardWarning: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#F59E0B'
-  },
-  metricCardSuccess: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#10B981'
-  },
-  metricCardInfo: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#3B82F6'
-  },
-  metricNumber: {
-    fontSize: 24,
-    fontFamily: 'Poppins-Bold',
-    color: '#1F2937',
-    marginTop: 8,
-    marginBottom: 4
-  },
-  metricLabel: {
-    fontSize: 12,
-    fontFamily: 'Poppins-Regular',
-    color: '#6B7280',
-    textAlign: 'center',
-    lineHeight: 16
-  },
   chartCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: 24,
+    borderRadius: 20,
+    padding: 20,
     marginHorizontal: 20,
     marginBottom: 20,
     shadowColor: '#000',
@@ -613,9 +654,9 @@ const styles = StyleSheet.create({
     marginBottom: 20
   },
   chartTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontFamily: 'Poppins-SemiBold',
-    color: '#1F2937',
+    color: '#6B7280',
     flex: 1
   },
   chartBadge: {
@@ -633,65 +674,280 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     borderRadius: 16
   },
-  calendarCard: {
-    backgroundColor: '#374151',
-    borderRadius: 24,
-    padding: 24,
-    marginHorizontal: 20,
+  dashboardOverviewContainer: {
+    paddingHorizontal: 20,
     marginBottom: 20
   },
-  calendarHeader: {
+  dashboardTitle: {
+    fontSize: 18,
+    fontFamily: 'Poppins-SemiBold',
+    color: '#1F2937',
+    marginBottom: 16
+  },
+  tabContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 24
+    marginBottom: 20,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 12,
+    padding: 4
   },
-  calendarTitle: {
-    color: '#FFFFFF',
-    fontSize: 20,
-    fontFamily: 'Poppins-Medium'
+  tabButton: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: 'center'
   },
-  calendarDate: {
-    color: '#9CA3AF',
+  activeTabButton: {
+    backgroundColor: '#1F2937'
+  },
+  tabButtonText: {
     fontSize: 14,
-    fontFamily: 'Poppins-Regular'
+    fontFamily: 'Poppins-Medium',
+    color: '#6B7280'
   },
-  weekContainer: {
+  activeTabButtonText: {
+    color: '#FFFFFF'
+  },
+  dashboardCardsContainer: {
+    gap: 12
+  },
+  cronogramaCard: {
+    backgroundColor: '#6366F1',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 12
+  },
+  cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 5
-  },
-  dayContainer: {
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderRadius: 16,
-    minWidth: 42
+    marginBottom: 16
   },
-  todayContainer: {
-    backgroundColor: '#6366F1'
-  },
-  dayNumber: {
-    color: '#FFFFFF',
+  cardTitle: {
     fontSize: 16,
     fontFamily: 'Poppins-Medium',
+    color: '#FFFFFF'
+  },
+  cardTitleSmall: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Medium',
+    color: '#4C1D95'
+  },
+  cardIcon: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  cardIconSmall: {
+    backgroundColor: 'rgba(76, 29, 149, 0.1)',
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  cardNumber: {
+    fontSize: 32,
+    fontFamily: 'Poppins-Bold',
+    color: '#FFFFFF',
     marginBottom: 4
   },
-  todayNumber: {
-    color: '#FFFFFF'
+  cardNumberSmall: {
+    fontSize: 24,
+    fontFamily: 'Poppins-Bold',
+    color: '#1F2937',
+    marginBottom: 4
   },
-  dayName: {
-    color: '#9CA3AF',
+  cardSubtitle: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Regular',
+    color: 'rgba(255, 255, 255, 0.8)'
+  },
+  cardSubtitleSmall: {
     fontSize: 12,
-    fontFamily: 'Poppins-Regular'
+    fontFamily: 'Poppins-Regular',
+    color: '#6B7280'
   },
-  todayName: {
+  bottomCardsRow: {
+    flexDirection: 'row',
+    gap: 12
+  },
+  pendenciasCard: {
+    backgroundColor: '#E0E7FF',
+    borderRadius: 16,
+    padding: 16,
+    flex: 1
+  },
+  fornecedoresCard: {
+    backgroundColor: '#F3F4F6',
+    borderRadius: 16,
+    padding: 16,
+    flex: 1
+  },
+  todoCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 20,
+    marginHorizontal: 20,
+    marginBottom: 30,
+    minHeight: 120,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3
+  },
+  todoHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20
+  },
+  todoTitle: {
+    color: '#1F2937',
+    fontSize: 18,
+    fontFamily: 'Poppins-SemiBold'
+  },
+  addButton: {
+    backgroundColor: '#000000',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  emptyTodoContainer: {
+    alignItems: 'center',
+    paddingVertical: 20
+  },
+  emptyTodoText: {
+    color: '#6B7280',
+    fontSize: 14,
+    fontFamily: 'Poppins-Regular',
+    textAlign: 'center'
+  },
+  todoList: {
+    flex: 1
+  },
+  todoItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6'
+  },
+  todoContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1
+  },
+  todoCheckbox: {
+    width: 20,
+    height: 20,
+    borderWidth: 2,
+    borderColor: '#6366F1',
+    borderRadius: 4,
+    marginRight: 12,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  todoCheckboxCompleted: {
+    backgroundColor: '#6366F1'
+  },
+  todoText: {
+    color: '#1F2937',
+    fontSize: 14,
+    fontFamily: 'Poppins-Regular',
+    flex: 1
+  },
+  todoTextCompleted: {
+    textDecorationLine: 'line-through',
+    color: '#9CA3AF'
+  },
+  deleteButton: {
+    padding: 8,
+    marginLeft: 8
+  },
+  
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 25,
+    elevation: 10
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontFamily: 'Poppins-SemiBold',
+    color: '#1F2937',
+    marginBottom: 20,
+    textAlign: 'center'
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 14,
+    fontFamily: 'Poppins-Regular',
+    color: '#1F2937',
+    minHeight: 80,
+    textAlignVertical: 'top',
+    marginBottom: 24
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12
+  },
+  modalButtonCancel: {
+    flex: 1,
+    backgroundColor: '#F3F4F6',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    alignItems: 'center'
+  },
+  modalButtonAdd: {
+    flex: 1,
+    backgroundColor: '#6366F1',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    alignItems: 'center'
+  },
+  modalButtonTextCancel: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Medium',
+    color: '#6B7280'
+  },
+  modalButtonTextAdd: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Medium',
     color: '#FFFFFF'
   },
-  alertasCard: {
+
+  // Alertas de Suprimentos Styles
+  alertasContainer: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: 24,
+    borderRadius: 20,
+    padding: 20,
     marginHorizontal: 20,
     marginBottom: 20,
     shadowColor: '#000',
@@ -704,41 +960,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20
-  },
-  alertasTitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center'
+    marginBottom: 16
   },
   alertasTitle: {
-    color: '#1F2937',
     fontSize: 18,
     fontFamily: 'Poppins-SemiBold',
-    marginLeft: 12
-  },
-  alertasBadge: {
-    backgroundColor: '#EF4444',
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  alertasBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontFamily: 'Poppins-Bold'
-  },
-  alertasList: {
-    flex: 1
+    color: '#1F2937'
   },
   alertaItem: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6'
+    paddingHorizontal: 16,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    marginBottom: 8
   },
   alertaContent: {
     flexDirection: 'row',
@@ -761,26 +998,26 @@ const styles = StyleSheet.create({
     flex: 1
   },
   alertaItemNome: {
-    color: '#1F2937',
     fontSize: 14,
     fontFamily: 'Poppins-Medium',
+    color: '#1F2937',
     marginBottom: 2
   },
   alertaCategoria: {
-    color: '#6B7280',
     fontSize: 12,
     fontFamily: 'Poppins-Regular',
+    color: '#6B7280',
     marginBottom: 2
   },
   alertaQuantidade: {
-    color: '#374151',
-    fontSize: 11,
-    fontFamily: 'Poppins-Regular'
+    fontSize: 12,
+    fontFamily: 'Poppins-Regular',
+    color: '#9CA3AF'
   },
   alertaNivel: {
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 12
+    borderRadius: 8
   },
   nivelCritico: {
     backgroundColor: '#FEE2E2'
@@ -790,7 +1027,7 @@ const styles = StyleSheet.create({
   },
   alertaNivelText: {
     fontSize: 10,
-    fontFamily: 'Poppins-SemiBold'
+    fontFamily: 'Poppins-Bold'
   },
   nivelCriticoText: {
     color: '#DC2626'
@@ -798,162 +1035,214 @@ const styles = StyleSheet.create({
   nivelBaixoText: {
     color: '#D97706'
   },
-  todoCard: {
-    backgroundColor: '#000000',
-    borderRadius: 24,
-    padding: 24,
-    marginHorizontal: 20,
-    marginBottom: 30,
-    minHeight: 120
-  },
-  todoHeader: {
+
+  // Métricas Cards Styles
+  metricasContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20
+    flexWrap: 'wrap',
+    paddingHorizontal: 20,
+    marginBottom: 20,
+    gap: 12
   },
-  todoTitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center'
-  },
-  todoIndicator: {
-    width: 4,
-    height: 20,
-    backgroundColor: '#6366F1',
-    borderRadius: 2,
-    marginRight: 12
-  },
-  todoTitle: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontFamily: 'Poppins-SemiBold'
-  },
-  addButton: {
+  metricaCard: {
     backgroundColor: '#FFFFFF',
-    width: 32,
-    height: 32,
     borderRadius: 16,
+    padding: 16,
+    flex: 1,
+    minWidth: '47%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3
+  },
+  metricaIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
-    alignItems: 'center'
-  },
-  emptyTodoContainer: {
     alignItems: 'center',
-    paddingVertical: 20
+    marginBottom: 12
   },
-  emptyTodoText: {
-    color: '#6B7280',
-    fontSize: 14,
-    fontFamily: 'Poppins-Regular',
-    textAlign: 'center',
-    marginTop: 12,
+  metricaValor: {
+    fontSize: 24,
+    fontFamily: 'Poppins-Bold',
+    color: '#1F2937',
     marginBottom: 4
   },
-  emptyTodoSubtext: {
-    color: '#4B5563',
+  metricaLabel: {
     fontSize: 12,
     fontFamily: 'Poppins-Regular',
-    textAlign: 'center'
+    color: '#6B7280',
+    lineHeight: 16
   },
-  todoList: {
-    flex: 1
+  metricaVariacao: {
+    fontSize: 12,
+    fontFamily: 'Poppins-Medium',
+    marginTop: 4
   },
-  todoItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#1F2937'
+  variacaoPositiva: {
+    color: '#10B981'
   },
-  todoContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1
+  variacaoNegativa: {
+    color: '#EF4444'
   },
-  todoCheckbox: {
-    width: 20,
-    height: 20,
-    borderWidth: 2,
-    borderColor: '#6366F1',
-    borderRadius: 4,
-    marginRight: 12,
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  todoCheckboxCompleted: {
-    backgroundColor: '#6366F1'
-  },
-  todoText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontFamily: 'Poppins-Regular',
-    flex: 1
-  },
-  todoTextCompleted: {
-    textDecorationLine: 'line-through',
-    color: '#6B7280'
-  },
-  deleteButton: {
-    padding: 8,
-    marginLeft: 10
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  modalContent: {
+
+  // Additional Chart Styles
+  pieChartCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
     padding: 20,
-    width: '90%',
-    maxWidth: 400
+    marginHorizontal: 20,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3
   },
-  modalTitle: {
+  pieChartTitle: {
+    fontSize: 16,
+    fontFamily: 'Poppins-SemiBold',
+    color: '#1F2937',
+    marginBottom: 16,
+    textAlign: 'center'
+  },
+  
+  // Performance Chart Styles
+  performanceCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 20,
+    marginHorizontal: 20,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3
+  },
+  performanceTitle: {
+    fontSize: 16,
+    fontFamily: 'Poppins-SemiBold',
+    color: '#1F2937',
+    marginBottom: 16
+  },
+
+  // Progress Chart Styles
+  progressCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 20,
+    marginHorizontal: 20,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3
+  },
+  progressTitle: {
+    fontSize: 16,
+    fontFamily: 'Poppins-SemiBold',
+    color: '#1F2937',
+    marginBottom: 16
+  },
+
+  // Quick Actions Styles
+  quickActionsContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 20
+  },
+  quickActionsTitle: {
     fontSize: 18,
     fontFamily: 'Poppins-SemiBold',
-    marginBottom: 15,
-    textAlign: 'center',
-    color: '#1F2937'
+    color: '#1F2937',
+    marginBottom: 16
   },
-  modalInput: {
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 10,
-    padding: 15,
-    fontSize: 16,
-    fontFamily: 'Poppins-Regular',
-    minHeight: 80,
-    textAlignVertical: 'top',
-    marginBottom: 20,
-    color: '#1F2937'
-  },
-  modalButtons: {
+  quickActionsGrid: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 10
+    flexWrap: 'wrap',
+    gap: 12
   },
-  modalButtonCancel: {
+  quickActionButton: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
     flex: 1,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 10,
-    padding: 15,
-    alignItems: 'center'
+    minWidth: '47%',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3
   },
-  modalButtonAdd: {
+  quickActionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12
+  },
+  quickActionText: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Medium',
+    color: '#1F2937',
+    textAlign: 'center'
+  },
+
+  // Summary Stats Styles
+  summaryStatsContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    marginBottom: 20,
+    gap: 12
+  },
+  summaryStatCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
     flex: 1,
-    backgroundColor: '#6366F1',
-    borderRadius: 10,
-    padding: 15,
-    alignItems: 'center'
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3
   },
-  modalButtonTextCancel: {
+  summaryStatNumber: {
+    fontSize: 20,
+    fontFamily: 'Poppins-Bold',
+    color: '#1F2937',
+    marginBottom: 4
+  },
+  summaryStatLabel: {
+    fontSize: 12,
+    fontFamily: 'Poppins-Regular',
     color: '#6B7280',
-    fontFamily: 'Poppins-SemiBold'
+    textAlign: 'center'
   },
-  modalButtonTextAdd: {
-    color: '#FFFFFF',
-    fontFamily: 'Poppins-SemiBold'
+  summaryStatTrend: {
+    fontSize: 12,
+    fontFamily: 'Poppins-Medium',
+    marginTop: 4
+  },
+
+  // Responsive adjustments
+  '@media (max-width: 375)': {
+    greeting: {
+      fontSize: 22
+    },
+    greetingSecond: {
+      fontSize: 22
+    },
+    cardNumber: {
+      fontSize: 28
+    },
+    cardNumberSmall: {
+      fontSize: 20
+    }
   }
 });
-
