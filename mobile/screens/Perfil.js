@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import Layout from '../components/Layout';
+import { API_URL } from '../components/config'; 
 
 export default function Perfil() {
   const [isEditing, setIsEditing] = useState(false);
@@ -33,7 +34,7 @@ export default function Perfil() {
   });
   const [editedData, setEditedData] = useState({ ...userData });
 
-  const API_URL = 'http://10.136.23.106:3000'; // Ajuste conforme seu IP
+  
 
   useEffect(() => {
     carregarDadosUsuario();
