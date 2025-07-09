@@ -190,12 +190,12 @@ const SupplyAIChatScreen = () => {
   };
 
   const quickSuggestions = [
-    { text: 'Notebooks para design', emoji: '💻' },
-    { text: 'Impressoras 3D', emoji: '🖨️' },
-    { text: 'Tablets para desenho', emoji: '📱' },
-    { text: 'Armazenamento SSD', emoji: '💾' },
-    { text: 'Monitores 4K', emoji: '🖥️' },
-    { text: 'Mesa digitalizadora', emoji: '✏️' }
+    { text: 'Notebooks para design' },
+    { text: 'Impressoras 3D'},
+    { text: 'Tablets para desenho' },
+    { text: 'Armazenamento SSD'},
+    { text: 'Monitores 4K'},
+    { text: 'Mesa digitalizadora'}
   ];
 
   const dismissKeyboard = () => {
@@ -260,15 +260,7 @@ const SupplyAIChatScreen = () => {
       <StatusBar barStyle="light-content" backgroundColor="#000" translucent />
       <View style={styles.container}>
         {/* Header aprimorado */}
-        <View style={styles.header}>
-          <View style={styles.headerContent}>
-            <View style={styles.aiIndicator}>
-              <View style={styles.statusDot} />
-              <Text style={styles.headerTitle}>Consultor IA</Text>
-            </View>
-            <Text style={styles.headerSubtitle}>Design & Tech</Text>
-          </View>
-        </View>
+       
 
         {/* Container principal com animação */}
         <Animated.View style={[styles.mainContainer, { transform: [{ translateY: keyboardOffset }] }]}>
@@ -356,11 +348,12 @@ const SupplyAIChatScreen = () => {
                     disabled={inputText.trim() === '' || isLoading}
                     activeOpacity={0.8}
                   >
-                    <Ionicons 
-                      name={isLoading ? "ellipsis-horizontal" : "arrow-up"} 
-                      size={20} 
-                      color={(inputText.trim() === '' || isLoading) ? '#9CA3AF' : '#FFFFFF'} 
-                    />
+                   <Ionicons 
+  name={isLoading ? "ellipsis-horizontal" : "arrow-up"} 
+  size={20} 
+  color={(inputText.trim() === '' || isLoading) ? '#FFFFFF' : '#FFFFFF'} 
+/>
+
                   </TouchableOpacity>
                 </View>
               </View>
@@ -450,8 +443,9 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   userBubble: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#4848D8',
   },
+  
   aiBubble: {
     backgroundColor: '#F8F9FA',
     borderWidth: 1,
@@ -600,20 +594,14 @@ const styles = StyleSheet.create({
     fontWeight: '400',
   },
   sendButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#007AFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#007AFF',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 4,
+    backgroundColor: '#4848D8',
+    borderRadius: 999,
+    padding: 10,
+    marginLeft: 8,
   },
+  
   sendButtonDisabled: {
-    backgroundColor: '#E5E7EB',
+    backgroundColor: '#4848D8',
     shadowOpacity: 0,
     elevation: 0,
   },

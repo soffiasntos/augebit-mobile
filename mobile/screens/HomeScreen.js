@@ -34,22 +34,28 @@ export default function SuppliesDashboard() {
   const [novaTarefa, setNovaTarefa] = useState('');
   const [activeTab, setActiveTab] = useState('Todas');
   
-  // Estados específicos para o dashboard de suprimentos
-  const [metricas, setMetricas] = useState({
-    pedidosPendentes: 12,
-    estoqueMinimo: 5,
-    fornecedoresAtivos: 8,
-    valorMensal: 45800,
-    economiaGerada: 8500,
-    eficienciaProcessos: 87
+  // Dados estáticos para o dashboard
+  const [dadosEstaticos] = useState({
+    todas: {
+      pedidosTotal: 245,
+      pedidosCompletos: 187,
+      pedidosPendentes: 58,
+      fornecedoresAtivos: 34,
+      valorTotalMes: 'R$ 45.800',
+      economiaGerada: 'R$ 8.500',
+      itensEstoque: 1247,
+      itensEstoqueMinimo: 23
+    },
+    cronograma: {
+      eventosHoje: 5,
+      eventosSemanais: 18,
+      entregasAgendadas: 12,
+      reunioesFornecedores: 3,
+      auditoriasAgendadas: 2,
+      treinamentosPendentes: 4
+    },
+    
   });
-
-  const [alertasSuprimentos, setAlertasSuprimentos] = useState([
-    { id: 1, item: 'Papel A4', nivel: 'baixo', categoria: 'Material de Escritório', quantidade: 15 },
-    { id: 2, item: 'Tinta para Impressora HP', nivel: 'crítico', categoria: 'Suprimentos TI', quantidade: 3 },
-    { id: 3, item: 'Cabos HDMI', nivel: 'baixo', categoria: 'Equipamentos', quantidade: 8 },
-    { id: 4, item: 'Grampeador', nivel: 'crítico', categoria: 'Material de Escritório', quantidade: 2 }
-  ]);
 
   // Dados para gráficos
   const [gastosMensais] = useState({
@@ -59,25 +65,6 @@ export default function SuppliesDashboard() {
       color: (opacity = 1) => `rgba(99, 102, 241, ${opacity})`,
       strokeWidth: 3
     }]
-  });
-
-  const [categoriaGastos] = useState([
-    { name: 'TI', population: 35, color: '#6366F1', legendFontColor: '#374151', legendFontSize: 12 },
-    { name: 'Escritório', population: 28, color: '#10B981', legendFontColor: '#374151', legendFontSize: 12 },
-    { name: 'Limpeza', population: 20, color: '#F59E0B', legendFontColor: '#374151', legendFontSize: 12 },
-    { name: 'Outros', population: 17, color: '#EF4444', legendFontColor: '#374151', legendFontSize: 12 }
-  ]);
-
-  const [fornecedoresPerformance] = useState({
-    labels: ['Fornec. A', 'Fornec. B', 'Fornec. C', 'Fornec. D'],
-    datasets: [{
-      data: [95, 87, 78, 92]
-    }]
-  });
-
-  const [progressoMetas] = useState({
-    labels: ['Economia', 'Qualidade', 'Prazo', 'Satisfação'],
-    data: [0.87, 0.94, 0.78, 0.91]
   });
 
   const [fontsLoaded] = useFonts({
@@ -261,32 +248,115 @@ export default function SuppliesDashboard() {
     </View>
   );
 
-  const renderAlertaItem = ({ item }) => (
-    <View style={styles.alertaItem}>
-      <View style={styles.alertaContent}>
-        <View style={[
-          styles.alertaIndicator,
-          item.nivel === 'crítico' ? styles.alertaCritico : styles.alertaBaixo
-        ]} />
-        <View style={styles.alertaInfo}>
-          <Text style={styles.alertaItemNome}>{item.item}</Text>
-          <Text style={styles.alertaCategoria}>{item.categoria}</Text>
-          <Text style={styles.alertaQuantidade}>Qtd: {item.quantidade}</Text>
+  // Função para renderizar o conteúdo baseado na aba ativa
+  const renderDashboardContent = () => {
+    const dados = dadosEstaticos[activeTab.toLowerCase()];
+    
+    if (activeTab === 'Todas') {
+      return (
+        <View style={styles.dashboardGrid}>
+          <View style={styles.dashboardRow}>
+            <View style={styles.dashboardCardLarge}>
+              <View style={styles.cardIconContainer}>
+                <Ionicons name="document-text-outline" size={24} color="#6366F1" />
+              </View>
+              <Text style={styles.cardValue}>{dados.pedidosTotal}</Text>
+              <Text style={styles.cardLabel}>Pedidos Totais</Text>
+              <Text style={styles.cardSubInfo}>187 completos • 58 pendentes</Text>
+            </View>
+            <View style={styles.dashboardCardSmall}>
+              <View style={styles.cardIconContainer}>
+                <Ionicons name="people-outline" size={20} color="#10B981" />
+              </View>
+              <Text style={styles.cardValueSmall}>{dados.fornecedoresAtivos}</Text>
+              <Text style={styles.cardLabelSmall}>Fornecedores Ativos</Text>
+            </View>
+          </View>
+          
+          <View style={styles.dashboardRow}>
+            <View style={styles.dashboardCardSmall}>
+              <View style={styles.cardIconContainer}>
+                <Ionicons name="trending-up-outline" size={20} color="#F59E0B" />
+              </View>
+              <Text style={styles.cardValueSmall}>{dados.economiaGerada}</Text>
+              <Text style={styles.cardLabelSmall}>Economia Gerada</Text>
+            </View>
+            <View style={styles.dashboardCardSmall}>
+              <View style={styles.cardIconContainer}>
+                <Ionicons name="cube-outline" size={20} color="#8B5CF6" />
+              </View>
+              <Text style={styles.cardValueSmall}>{dados.itensEstoque}</Text>
+              <Text style={styles.cardLabelSmall}>Itens em Estoque</Text>
+            </View>
+          </View>
+          
+          <View style={styles.dashboardCardFull}>
+            <View style={styles.cardIconContainer}>
+              <Ionicons name="cash-outline" size={24} color="#EF4444" />
+            </View>
+            <Text style={styles.cardValue}>{dados.valorTotalMes}</Text>
+            <Text style={styles.cardLabel}>Valor Total do Mês</Text>
+            <View style={styles.cardTrendContainer}>
+              <Ionicons name="trending-up" size={16} color="#10B981" />
+              <Text style={styles.cardTrend}>+12.5% vs mês anterior</Text>
+            </View>
+          </View>
         </View>
-      </View>
-      <View style={[
-        styles.alertaNivel,
-        item.nivel === 'crítico' ? styles.nivelCritico : styles.nivelBaixo
-      ]}>
-        <Text style={[
-          styles.alertaNivelText,
-          item.nivel === 'crítico' ? styles.nivelCriticoText : styles.nivelBaixoText
-        ]}>
-          {item.nivel.toUpperCase()}
-        </Text>
-      </View>
-    </View>
-  );
+      );
+    }
+    
+    if (activeTab === 'Cronograma') {
+      return (
+        <View style={styles.dashboardGrid}>
+          <View style={styles.dashboardRow}>
+            <View style={styles.dashboardCardLarge}>
+              <View style={styles.cardIconContainer}>
+                <Ionicons name="calendar-outline" size={24} color="#6366F1" />
+              </View>
+              <Text style={styles.cardValue}>{dados.eventosHoje}</Text>
+              <Text style={styles.cardLabel}>Eventos Hoje</Text>
+              <Text style={styles.cardSubInfo}>18 eventos esta semana</Text>
+            </View>
+            <View style={styles.dashboardCardSmall}>
+              <View style={styles.cardIconContainer}>
+                <Ionicons name="truck-outline" size={20} color="#10B981" />
+              </View>
+              <Text style={styles.cardValueSmall}>{dados.entregasAgendadas}</Text>
+              <Text style={styles.cardLabelSmall}>Entregas Agendadas</Text>
+            </View>
+          </View>
+          
+          <View style={styles.dashboardRow}>
+            <View style={styles.dashboardCardSmall}>
+              <View style={styles.cardIconContainer}>
+                <Ionicons name="people-outline" size={20} color="#F59E0B" />
+              </View>
+              <Text style={styles.cardValueSmall}>{dados.reunioesFornecedores}</Text>
+              <Text style={styles.cardLabelSmall}>Reuniões Agendadas</Text>
+            </View>
+            <View style={styles.dashboardCardSmall}>
+              <View style={styles.cardIconContainer}>
+                <Ionicons name="school-outline" size={20} color="#8B5CF6" />
+              </View>
+              <Text style={styles.cardValueSmall}>{dados.treinamentosPendentes}</Text>
+              <Text style={styles.cardLabelSmall}>Treinamentos</Text>
+            </View>
+          </View>
+          
+          <View style={styles.dashboardCardFull}>
+            <View style={styles.cardIconContainer}>
+              <Ionicons name="shield-checkmark-outline" size={24} color="#EF4444" />
+            </View>
+            <Text style={styles.cardValue}>{dados.auditoriasAgendadas}</Text>
+            <Text style={styles.cardLabel}>Auditorias Agendadas</Text>
+            <Text style={styles.cardSubInfo}>Próxima auditoria em 3 dias</Text>
+          </View>
+        </View>
+      );
+    }
+    
+    
+  };
 
   if (!fontsLoaded) {
     return (
@@ -373,13 +443,13 @@ export default function SuppliesDashboard() {
           />
         </View>
 
-        {/* Dashboard Overview */}
+        {/* Dashboard Overview Melhorado */}
         <View style={styles.dashboardOverviewContainer}>
           <Text style={styles.dashboardTitle}>Dashboard overview</Text>
           
           {/* Tab Buttons */}
           <View style={styles.tabContainer}>
-            {['Todas', 'Cronograma', 'Pendências'].map((tab) => (
+            {['Todas', 'Cronograma'].map((tab) => (
               <TouchableOpacity
                 key={tab}
                 style={[
@@ -398,47 +468,8 @@ export default function SuppliesDashboard() {
             ))}
           </View>
 
-          {/* Dashboard Cards */}
-          <View style={styles.dashboardCardsContainer}>
-            {/* Cronograma Card */}
-            <TouchableOpacity style={styles.cronogramaCard}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.cardTitle}>Cronograma</Text>
-                <View style={styles.cardIcon}>
-                  <Ionicons name="arrow-forward-outline" size={20} color="#FFFFFF" />
-                </View>
-              </View>
-              <Text style={styles.cardNumber}>57</Text>
-              <Text style={styles.cardSubtitle}>Eventos</Text>
-            </TouchableOpacity>
-
-            {/* Bottom Row Cards */}
-            <View style={styles.bottomCardsRow}>
-              {/* Pendências Card */}
-              <TouchableOpacity style={styles.pendenciasCard}>
-                <View style={styles.cardHeader}>
-                  <Text style={styles.cardTitleSmall}>Pendências</Text>
-                  <View style={styles.cardIconSmall}>
-                    <Ionicons name="arrow-forward-outline" size={16} color="#4C1D95" />
-                  </View>
-                </View>
-                <Text style={styles.cardNumberSmall}>86</Text>
-                <Text style={styles.cardSubtitleSmall}>Pedidos incompletos</Text>
-              </TouchableOpacity>
-
-              {/* Fornecedores Card */}
-              <TouchableOpacity style={styles.fornecedoresCard}>
-                <View style={styles.cardHeader}>
-                  <Text style={styles.cardTitleSmall}>Fornecedores</Text>
-                  <View style={styles.cardIconSmall}>
-                    <Ionicons name="arrow-forward-outline" size={16} color="#6B7280" />
-                  </View>
-                </View>
-                <Text style={styles.cardNumberSmall}>34</Text>
-                <Text style={styles.cardSubtitleSmall}>Fornecedores ativos</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+          {/* Dashboard Content */}
+          {renderDashboardContent()}
         </View>
 
         {/* Todo Card */}
@@ -687,27 +718,63 @@ const styles = StyleSheet.create({
   tabContainer: {
     flexDirection: 'row',
     marginBottom: 20,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#F1F5F9',
     borderRadius: 12,
-    padding: 4
+    padding: 3
   },
   tabButton: {
     flex: 1,
-    paddingVertical: 8,
+    paddingVertical: 10,
     paddingHorizontal: 16,
-    borderRadius: 8,
+    borderRadius: 9,
     alignItems: 'center'
   },
   activeTabButton: {
-    backgroundColor: '#1F2937'
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2
   },
   tabButtonText: {
     fontSize: 14,
     fontFamily: 'Poppins-Medium',
-    color: '#6B7280'
+    color: '#64748B'
   },
   activeTabButtonText: {
-    color: '#FFFFFF'
+    color: '#1F2937'
+  },
+  
+  // Novos estilos para o dashboard grid
+  dashboardGrid: {
+    gap: 16
+  },
+  dashboardRow: {
+    flexDirection: 'row',
+    gap: 16
+  },
+  dashboardCardLarge: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 20,
+    flex: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3
+  },
+  dashboardCardSmall: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    flex: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3
   },
   dashboardCardsContainer: {
     gap: 12
@@ -776,12 +843,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12
   },
-  pendenciasCard: {
-    backgroundColor: '#E0E7FF',
-    borderRadius: 16,
-    padding: 16,
-    flex: 1
-  },
+  
   fornecedoresCard: {
     backgroundColor: '#F3F4F6',
     borderRadius: 16,
@@ -1230,6 +1292,42 @@ const styles = StyleSheet.create({
     marginTop: 4
   },
 
+  // Estilos adicionais para cards específicos
+  cardLargeTitle: {
+    fontSize: 16,
+    fontFamily: 'Poppins-SemiBold',
+    color: '#1F2937',
+    marginBottom: 12
+  },
+  cardLargeValue: {
+    fontSize: 28,
+    fontFamily: 'Poppins-Bold',
+    color: '#1F2937',
+    marginBottom: 4
+  },
+  cardLargeSubtitle: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Regular',
+    color: '#6B7280'
+  },
+  cardSmallTitle: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Medium',
+    color: '#1F2937',
+    marginBottom: 8
+  },
+  cardSmallValue: {
+    fontSize: 20,
+    fontFamily: 'Poppins-Bold',
+    color: '#1F2937',
+    marginBottom: 4
+  },
+  cardSmallSubtitle: {
+    fontSize: 12,
+    fontFamily: 'Poppins-Regular',
+    color: '#6B7280'
+  },
+
   // Responsive adjustments
   '@media (max-width: 375)': {
     greeting: {
@@ -1243,6 +1341,12 @@ const styles = StyleSheet.create({
     },
     cardNumberSmall: {
       fontSize: 20
+    },
+    cardLargeValue: {
+      fontSize: 24
+    },
+    cardSmallValue: {
+      fontSize: 18
     }
   }
 });
