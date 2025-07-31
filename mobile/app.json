@@ -20,7 +20,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/augebit.png",
         "backgroundColor": "#FFFFFF"
-      }
+      },
+      "package": "com.anonymous.augebitmobile"
     },
     "plugins": [
       "expo-video"
