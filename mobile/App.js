@@ -8,7 +8,6 @@ LogBox.ignoreLogs(['[expo-av] Video component']);
 
 import SplashScreen from './screens/SplashScreen';
 import LoginScreen from './screens/LoginScreen';
-import LoadingScreen from './screens/LoadingScreen';
 import HomeScreen from './screens/HomeScreen';
 import Perfil from './screens/Perfil';
 import ProdutosScreen from './screens/ProdutosScreen';
@@ -25,7 +24,6 @@ export default function App() {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Splash" component={SplashScreen} />
         <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="Loading" component={LoadingScreen} />
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="Perfil" component={Perfil} />
         <Stack.Screen name="ProdutosScreen" component={ProdutosScreen} />
